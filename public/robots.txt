@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /_authenticated/
+Disallow: /api/
+Disallow: /reset-password
+
+Sitemap: https://abroadcompass.app/sitemap.xml
