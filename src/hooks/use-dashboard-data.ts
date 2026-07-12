@@ -37,6 +37,7 @@ export type DashboardData = {
   dmatWeeklyHours: number;
   dmatCurrentTopic: string | null;
   dmatNextTopic: string | null;
+  goetheTargetLevel: string | null;
 };
 
 type TaskRow = {
@@ -78,6 +79,7 @@ const DEFAULT: DashboardData = {
   dmatWeeklyHours: 0,
   dmatCurrentTopic: null,
   dmatNextTopic: null,
+  goetheTargetLevel: null,
 };
 
 const CORE_DOCS = [
@@ -125,6 +127,7 @@ export function useDashboardData(): DashboardData {
         dmatProgressObj,
         dmatSettingsObj,
         adminScheduleObj,
+        goetheSettingsObj,
       ] = await Promise.all([
         supabase
           .from("tasks")
@@ -179,6 +182,8 @@ export function useDashboardData(): DashboardData {
         (supabase.from as any)("dmat_progress").select("*").eq("user_id", user!.id),
         supabase.from("dmat_settings").select("*").eq("user_id", user!.id).maybeSingle(),
         supabase.from("admin_exam_schedule").select("*").eq("is_active", true).maybeSingle(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from as any)("goethe_settings").select("*").eq("user_id", user!.id).maybeSingle(),
       ]);
 
       if (cancelled) return;
@@ -188,6 +193,7 @@ export function useDashboardData(): DashboardData {
       const dmatProgress = dmatProgressObj?.data || [];
       const dmatSettings = dmatSettingsObj?.data;
       const adminSchedule = adminScheduleObj?.data;
+      const goetheSettings = goetheSettingsObj?.data;
 
       // Calculate IELTS progress roughly
       let ieltsOverallPct = 0;
@@ -485,6 +491,7 @@ export function useDashboardData(): DashboardData {
         dmatWeeklyHours,
         dmatCurrentTopic,
         dmatNextTopic,
+        goetheTargetLevel: goetheSettings?.target_level ?? null,
       });
     }
 

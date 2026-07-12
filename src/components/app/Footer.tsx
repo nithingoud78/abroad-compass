@@ -40,13 +40,13 @@ export function Footer() {
     <footer className="border-t bg-background/50 mt-auto h-12 md:h-14 flex items-center shrink-0 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 text-xs">
         {/* Left: Copyright */}
-        <div className="flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-center md:justify-start gap-1.5 text-muted-foreground text-sm">
           <span className="font-display font-semibold text-foreground">Abroad Compass</span>
           <span>{settings?.copyright_text || `© ${new Date().getFullYear()} AbroadCompass`}</span>
         </div>
 
         {/* Right: Legal Links & Socials */}
-        <div className="flex items-center gap-6 ml-auto min-w-0">
+        <div className="hidden md:flex items-center gap-6 ml-auto min-w-0">
           <nav className="hidden md:flex items-center gap-4 font-medium text-muted-foreground overflow-hidden">
             {links.length > 0 ? (
               links.map((l) => (

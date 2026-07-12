@@ -556,7 +556,7 @@ function GoetheWidget({ data }: { data: DashboardData }) {
       <Stat
         icon={<Languages className="h-4 w-4" />}
         label="German Target"
-        value={data.germanLevel || "—"}
+        value={data.goetheTargetLevel || "—"}
         hint="CEFR Goal"
         accent
       />

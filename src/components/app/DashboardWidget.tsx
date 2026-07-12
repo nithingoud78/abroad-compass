@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export function DashboardWidget({
   icon: Icon,
@@ -24,7 +25,7 @@ export function DashboardWidget({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className={className}
+      className={cn("min-w-0", className)}
     >
       <Card className="h-full shadow-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
