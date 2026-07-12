@@ -198,6 +198,7 @@ function UniversityPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [acceptanceFor, setAcceptanceFor] = useState<University | null>(null);
 
@@ -311,6 +312,27 @@ function UniversityPage() {
     });
   }
 
+  async function multiDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} universities?`)) return;
+    await supabase.from("universities").delete().in("id", Array.from(selected));
+    load();
+    setSelected(new Set());
+    setSelectionMode(false);
+  }
+
+  async function multiPin() {
+    if (selected.size === 0) return;
+    await supabase.from("universities").update({ pinned: true }).in("id", Array.from(selected));
+    load();
+  }
+
+  async function multiFav() {
+    if (selected.size === 0) return;
+    await supabase.from("universities").update({ favourite: true }).in("id", Array.from(selected));
+    load();
+  }
+
   // ---- CSV ----
   function exportCsv() {
     const cols: (keyof University)[] = [
@@ -408,29 +430,75 @@ function UniversityPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Your target programs</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importCsv(f);
-              e.target.value = "";
-            }}
-          />
-          <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import CSV
-          </Button>
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add university
-          </Button>
+          {!selectionMode ? (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setSelectionMode(true)}>
+                Select
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+                <Upload className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importCsv(f);
+                  e.target.value = "";
+                }}
+              />
+              <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
+                <Download className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add university
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelected(new Set());
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCompareOpen(true)}
+                disabled={selected.size < 2}
+              >
+                <GitCompare className="mr-2 h-4 w-4" />
+                Compare
+              </Button>
+              <Button size="sm" variant="outline" onClick={multiPin} disabled={selected.size === 0}>
+                <Pin className="mr-2 h-4 w-4" />
+                Pin
+              </Button>
+              <Button size="sm" variant="outline" onClick={multiFav} disabled={selected.size === 0}>
+                <Star className="mr-2 h-4 w-4" />
+                Favourite
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={multiDelete}
+                disabled={selected.size === 0}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -560,7 +628,7 @@ function UniversityPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-10 p-3"></th>
+                {selectionMode && <th className="w-10 p-3"></th>}
                 <th className="w-8 p-3"></th>
                 <th className="p-3 text-left">University</th>
                 <th className="p-3 text-left">Course</th>
@@ -596,12 +664,14 @@ function UniversityPage() {
                     animate={{ opacity: 1 }}
                     className="border-t hover:bg-muted/30"
                   >
-                    <td className="p-3">
-                      <Checkbox
-                        checked={selected.has(u.id)}
-                        onCheckedChange={() => toggleSelect(u.id)}
-                      />
-                    </td>
+                    {selectionMode && (
+                      <td className="p-3">
+                        <Checkbox
+                          checked={selected.has(u.id)}
+                          onCheckedChange={() => toggleSelect(u.id)}
+                        />
+                      </td>
+                    )}
                     <td className="p-3">
                       <div className="flex flex-col items-center gap-1">
                         <button

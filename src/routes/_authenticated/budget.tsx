@@ -13,6 +13,9 @@ import {
   Target,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { getBudgetAnalysis } from "@/lib/ai/ai.functions";
+import { Sparkles } from "lucide-react";
 import {
   ResponsiveContainer,
   PieChart,
@@ -51,6 +54,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { EmptyState } from "@/components/app/EmptyState";
 import { downloadCsv, fromCsv, toCsv } from "@/lib/csv";
+
+import { SummaryCard } from "@/components/app/SummaryCard";
+import { StandardPageLayout } from "@/components/app/StandardPageLayout";
 
 export const Route = createFileRoute("/_authenticated/budget")({
   head: () => ({ meta: [{ title: "Budget — Abroad Compass" }] }),
@@ -114,6 +120,10 @@ function BudgetPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>("EUR");
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeFn = useServerFn(getBudgetAnalysis);
+
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -217,7 +227,20 @@ function BudgetPage() {
     toast.success("Entry saved");
     setOpen(false);
     setForm({ ...form, amount: "", description: "", subcategory: "" });
+    setAiAnalysis(null);
     load();
+  }
+
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    try {
+      const res = await analyzeFn({ data: { entries, totals, goals } });
+      setAiAnalysis(res.analysis);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   async function remove(e: Entry) {
@@ -303,21 +326,20 @@ function BudgetPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Budget</p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Money toward Germany</h1>
-        </div>
+    <StandardPageLayout
+      title="Money toward Germany"
+      subtitle="Budget"
+      actions={
         <div className="flex flex-wrap items-center gap-2">
           <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
             <SelectTrigger className="w-24">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="INR">INR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="EUR">EUR (€)</SelectItem>
+              <SelectItem value="INR">INR (₹)</SelectItem>
+              <SelectItem value="USD">USD ($)</SelectItem>
+              <SelectItem value="GBP">GBP (£)</SelectItem>
             </SelectContent>
           </Select>
           <label className="cursor-pointer">
@@ -465,7 +487,36 @@ function BudgetPage() {
             </DialogContent>
           </Dialog>
         </div>
-      </header>
+      }
+    >
+      <div className="flex justify-end">
+        <Button
+          variant="secondary"
+          className="gap-2 bg-brand/10 text-brand hover:bg-brand/20"
+          onClick={handleAnalyze}
+          disabled={analyzing || aiAnalysis !== null}
+        >
+          {analyzing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          {aiAnalysis ? "AI Analysis Completed" : "Get AI Financial Advice"}
+        </Button>
+      </div>
+
+      {aiAnalysis && (
+        <div className="rounded-xl border bg-brand/5 p-5 text-sm text-foreground">
+          <div className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-brand">
+            <Sparkles className="h-5 w-5" /> AI Budget Insights
+          </div>
+          <div className="space-y-2 leading-relaxed">
+            {aiAnalysis.split("\n").map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 md:grid-cols-3">
         <StatCard
@@ -488,7 +539,7 @@ function BudgetPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="shadow-card">
           <CardContent className="space-y-3 p-5">
             <div className="flex items-center justify-between">
@@ -758,7 +809,7 @@ function BudgetPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </StandardPageLayout>
   );
 }
 
@@ -774,17 +825,17 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <Card className="shadow-card">
-      <CardContent className="flex items-center gap-3 p-5">
-        <div className={`grid h-10 w-10 place-items-center rounded-md bg-muted ${tone}`}>
-          <Icon className="h-5 w-5" />
+    <SummaryCard
+      icon={
+        <div
+          className={`grid h-6 w-6 place-items-center rounded-md bg-muted ${tone} [&>svg]:h-3.5 [&>svg]:w-3.5`}
+        >
+          <Icon />
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="font-display text-xl font-bold">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
+      }
+      title={label}
+      value={value}
+    />
   );
 }
 

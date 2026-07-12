@@ -62,8 +62,8 @@ const CATEGORIES = [
 ];
 
 function BlogPage() {
-  const { post: activeSlug } = useSearch({ from: "/_authenticated/blog" });
-  const navigate = useNavigate({ from: "/_authenticated/blog" });
+  const { post: activeSlug } = Route.useSearch();
+  const navigate = useNavigate();
   const [category, setCategory] = useState("all");
   const [rawSearch, setRawSearch] = useState("");
   const search = useDebounce(rawSearch, 250);
@@ -103,7 +103,7 @@ function BlogPage() {
     return (
       <PostReader
         post={activePost}
-        onBack={() => navigate({ search: {} })}
+        onBack={() => navigate({ to: ".", search: {} })}
         bookmarks={bookmarksQ.data ?? new Set()}
         allPosts={postsQ.data ?? []}
       />
@@ -160,7 +160,7 @@ function BlogPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-left"
-              onClick={() => navigate({ search: { post: p.slug } })}
+              onClick={() => navigate({ to: ".", search: { post: p.slug } })}
             >
               <Card className="h-full shadow-card transition-shadow hover:shadow-lg">
                 <CardContent className="pt-5">
@@ -205,8 +205,6 @@ function PostReader({
   const { user } = useAuth();
   const qc = useQueryClient();
   const [progress, setProgress] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   // Load progress
   useEffect(() => {
     if (!user) return;
@@ -223,12 +221,10 @@ function PostReader({
 
   // Track scroll → persist debounced
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
     let saved = 0;
     const onScroll = () => {
-      const max = el.scrollHeight - el.clientHeight;
-      const pct = max > 0 ? Math.min(1, el.scrollTop / max) : 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max > 0 ? Math.min(1, window.scrollY / max) : 0;
       setProgress(pct * 100);
       if (user && Math.abs(pct - saved) > 0.1) {
         saved = pct;
@@ -243,8 +239,8 @@ function PostReader({
         );
       }
     };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [user, post.id]);
 
   const isBookmarked = bookmarks.has(post.id);
@@ -271,11 +267,11 @@ function PostReader({
     .slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 -mx-4 mb-4 flex items-center gap-3 border-b bg-background/85 px-4 py-3 backdrop-blur">
+    <div className="mx-auto max-w-4xl">
+      <div className="sticky top-14 z-20 -mx-4 mb-4 flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur shadow-sm">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Blog
         </Button>
         <Progress value={progress} className="h-1.5 flex-1" />
         <Button variant="outline" size="sm" onClick={() => toggleBookmark.mutate()}>
@@ -293,43 +289,123 @@ function PostReader({
         </Button>
       </div>
 
-      <ScrollArea className="max-h-[calc(100vh-160px)]" ref={containerRef as never}>
-        <article className="prose prose-slate max-w-none pb-16 dark:prose-invert">
-          <div className="mb-2 flex items-center gap-2">
-            <Badge variant="secondary" className="capitalize">
-              {post.category}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              <Clock className="mr-1 inline h-3 w-3" />
-              {post.reading_minutes} min
-            </span>
-            <span className="text-xs text-muted-foreground">
-              · {format(new Date(post.published_at), "PPP")}
-            </span>
+      <article className="prose prose-slate max-w-none pb-16 pt-4 dark:prose-invert">
+        {post.cover_url && (
+          <div className="mb-10 w-full overflow-hidden rounded-2xl border shadow-sm">
+            <img
+              src={post.cover_url}
+              alt={post.title}
+              className="w-full object-cover max-h-[400px]"
+            />
           </div>
-          <h1 className="font-display">{post.title}</h1>
-          <p className="lead">{post.excerpt}</p>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body_md}</ReactMarkdown>
-          {related.length > 0 && (
-            <div className="mt-12 border-t pt-6 not-prose">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Related
-              </p>
-              <div className="grid gap-2">
-                {related.map((r) => (
-                  <a
-                    key={r.id}
-                    href={`?post=${r.slug}`}
-                    className="rounded-md border px-3 py-2 text-sm hover:bg-accent"
-                  >
+        )}
+        <div className="mb-6 flex items-center gap-4">
+          <Badge variant="secondary" className="capitalize text-sm px-3 py-1">
+            {post.category}
+          </Badge>
+          <span className="text-sm font-medium text-muted-foreground">
+            <Clock className="mr-1 inline h-4 w-4" />
+            {post.reading_minutes} min read
+          </span>
+          <span className="text-sm font-medium text-muted-foreground">
+            · {format(new Date(post.published_at), "PPP")}
+          </span>
+        </div>
+        <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl mb-6 leading-tight">
+          {post.title}
+        </h1>
+        <p className="text-xl text-muted-foreground mb-10 leading-relaxed border-l-4 border-brand pl-4">
+          {post.excerpt}
+        </p>
+        <div className="prose-lg">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h2: ({ node, ...props }) => (
+                <h2 className="font-display font-bold mt-12 mb-4 text-3xl" {...props} />
+              ),
+              h3: ({ node, ...props }) => (
+                <h3 className="font-display font-bold mt-8 mb-4 text-2xl" {...props} />
+              ),
+              p: ({ node, ...props }) => <p className="leading-relaxed text-lg mb-6" {...props} />,
+              a: ({ node, ...props }) => (
+                <a className="text-brand hover:underline font-medium" {...props} />
+              ),
+              blockquote: ({ node, ...props }) => (
+                <blockquote
+                  className="border-l-4 border-brand bg-brand/5 p-4 rounded-r-lg my-6 text-foreground italic"
+                  {...props}
+                />
+              ),
+              table: ({ node, ...props }) => (
+                <div className="overflow-x-auto my-8 border rounded-xl shadow-sm">
+                  <table className="w-full text-left border-collapse" {...props} />
+                </div>
+              ),
+              th: ({ node, ...props }) => (
+                <th className="bg-muted p-3 font-semibold border-b" {...props} />
+              ),
+              td: ({ node, ...props }) => <td className="p-3 border-b" {...props} />,
+              img: ({ node, ...props }) => (
+                <img
+                  className="rounded-xl shadow-md mx-auto my-8 max-h-[500px] object-cover"
+                  {...props}
+                />
+              ),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              code: ({ node, inline, className, children, ...props }: any) => {
+                if (inline) {
+                  return (
+                    <code
+                      className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-brand"
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                }
+                return (
+                  <div className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-xl overflow-x-auto my-6 text-sm font-mono shadow-inner">
+                    <code {...props}>{children}</code>
+                  </div>
+                );
+              },
+            }}
+          >
+            {post.body_md}
+          </ReactMarkdown>
+        </div>
+        {related.length > 0 && (
+          <div className="mt-16 border-t pt-8 not-prose">
+            <h3 className="mb-4 text-xl font-display font-semibold text-foreground">
+              Continue Reading
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((r) => (
+                <a
+                  key={r.id}
+                  href={`?post=${r.slug}`}
+                  className="block rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="text-sm font-medium leading-tight mb-2 line-clamp-2">
                     {r.title}
-                  </a>
-                ))}
-              </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {r.reading_minutes} min read
+                  </div>
+                </a>
+              ))}
             </div>
-          )}
-        </article>
-      </ScrollArea>
+          </div>
+        )}
+        <div className="mt-12 flex justify-center not-prose">
+          <Button variant="outline" onClick={onBack} size="lg">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Return to Blog
+          </Button>
+        </div>
+      </article>
     </div>
   );
 }

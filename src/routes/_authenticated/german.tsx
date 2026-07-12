@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { StandardPageLayout } from "@/components/app/StandardPageLayout";
 
 export const Route = createFileRoute("/_authenticated/german")({
   head: () => ({ meta: [{ title: "German Learning — Abroad Compass" }] }),
@@ -91,18 +98,16 @@ function GermanLearning() {
   );
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">German Learning</p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Your CEFR journey</h1>
-        </div>
+    <StandardPageLayout
+      title="Your CEFR journey"
+      subtitle="German Learning"
+      headerBadge={
         <Badge className="bg-brand text-brand-foreground">
           <Languages className="mr-1 h-3 w-3" />
           {profile?.current_german_level ?? "—"}
         </Badge>
-      </header>
-
+      }
+    >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Skill
           icon={<Headphones className="h-4 w-4" />}
@@ -167,23 +172,30 @@ function GermanLearning() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-flow-col grid-rows-7 gap-1">
-            {heatmap.map((d) => {
-              const intensity = Math.min(4, Math.floor((d.minutes ?? 0) / 15));
-              const bg = [
-                "bg-muted",
-                "bg-warm-peach/60",
-                "bg-warm-rose/70",
-                "bg-brand/70",
-                "bg-brand",
-              ][intensity];
-              return (
-                <span
-                  key={d.date}
-                  title={`${d.date}: ${d.minutes} min`}
-                  className={`h-3 w-3 rounded-[3px] ${bg}`}
-                />
-              );
-            })}
+            <TooltipProvider>
+              {heatmap.map((d) => {
+                const intensity = Math.min(4, Math.floor((d.minutes ?? 0) / 15));
+                const bg = [
+                  "bg-muted",
+                  "bg-warm-peach/60",
+                  "bg-warm-rose/70",
+                  "bg-brand/70",
+                  "bg-brand",
+                ][intensity];
+                return (
+                  <UITooltip key={d.date}>
+                    <TooltipTrigger>
+                      <span className={`h-3 w-3 block rounded-[3px] ${bg}`} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        {d.date}: {d.minutes} min
+                      </p>
+                    </TooltipContent>
+                  </UITooltip>
+                );
+              })}
+            </TooltipProvider>
           </div>
         </CardContent>
       </Card>
@@ -223,7 +235,7 @@ function GermanLearning() {
           ))}
         </CardContent>
       </Card>
-    </div>
+    </StandardPageLayout>
   );
 }
 

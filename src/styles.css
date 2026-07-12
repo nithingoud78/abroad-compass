@@ -47,6 +47,11 @@
   --shadow-elegant: 0 20px 60px -20px oklch(0.2 0.04 40 / 0.18);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* for sticky header */
+}
+
 :root {
   --radius: 0.875rem;
 

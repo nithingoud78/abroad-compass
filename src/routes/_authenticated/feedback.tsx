@@ -59,37 +59,44 @@ type FeedbackItem = {
 };
 
 const feedbackSchema = z.object({
-  kind: z.enum(["feature", "bug", "suggestion", "rating"]),
+  kind: z.enum([
+    "bug",
+    "feature_request",
+    "suggestion",
+    "improvement",
+    "ui_ux",
+    "performance",
+    "other",
+  ]),
   title: z.string().trim().min(3, "Title too short").max(120),
   description: z.string().trim().min(10, "Add more detail").max(2000),
   rating: z.number().int().min(1).max(5).optional(),
 });
 
 const KINDS = [
-  { key: "feature", label: "Feature", icon: Sparkles },
   { key: "bug", label: "Bug", icon: Bug },
+  { key: "feature_request", label: "Feature Request", icon: Sparkles },
   { key: "suggestion", label: "Suggestion", icon: MessageSquare },
-  { key: "rating", label: "Rating", icon: Star },
+  { key: "improvement", label: "Improvement", icon: Sparkles },
+  { key: "ui_ux", label: "UI / UX", icon: Sparkles },
+  { key: "performance", label: "Performance", icon: Sparkles },
+  { key: "other", label: "Other", icon: MessageSquare },
 ] as const;
-
-const STATUSES = ["all", "open", "planned", "in_progress", "shipped", "wont_do"];
 
 function FeedbackPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [status, setStatus] = useState<string>("all");
   const [kind, setKind] = useState<string>("all");
   const [open, setOpen] = useState(false);
 
   const itemsQ = useQuery({
-    queryKey: ["feedback", status, kind],
+    queryKey: ["feedback", kind],
     queryFn: async () => {
       let q = supabase
         .from("feedback_items" as never)
         .select("*")
         .order("vote_count", { ascending: false })
         .order("created_at", { ascending: false });
-      if (status !== "all") q = q.eq("status", status);
       if (kind !== "all") q = q.eq("kind", kind);
       const { data, error } = await q;
       if (error) throw error;
@@ -143,10 +150,10 @@ function FeedbackPage() {
     },
     onMutate: async (item) => {
       await qc.cancelQueries({ queryKey: ["feedback"] });
-      const prev = qc.getQueryData<FeedbackItem[]>(["feedback", status, kind]);
+      const prev = qc.getQueryData<FeedbackItem[]>(["feedback", kind]);
       const prevVotes = qc.getQueryData<Set<string>>(["feedback-my-votes", user?.id]);
       const has = prevVotes?.has(item.id) ?? false;
-      qc.setQueryData<FeedbackItem[]>(["feedback", status, kind], (rows) =>
+      qc.setQueryData<FeedbackItem[]>(["feedback", kind], (rows) =>
         (rows ?? []).map((r) =>
           r.id === item.id ? { ...r, vote_count: r.vote_count + (has ? -1 : 1) } : r,
         ),
@@ -158,7 +165,7 @@ function FeedbackPage() {
       return { prev, prevVotes };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["feedback", status, kind], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["feedback", kind], ctx.prev);
       if (ctx?.prevVotes) qc.setQueryData(["feedback-my-votes", user?.id], ctx.prevVotes);
     },
     onSettled: () => {
@@ -197,29 +204,17 @@ function FeedbackPage() {
         />
       </header>
 
-      <div className="flex flex-wrap gap-3">
-        <Tabs value={status} onValueChange={setStatus}>
-          <TabsList>
-            {STATUSES.map((s) => (
-              <TabsTrigger key={s} value={s} className="capitalize">
-                {s.replace("_", " ")}
+      <div className="flex flex-wrap gap-3 overflow-x-auto pb-2">
+        <Tabs value={kind} onValueChange={setKind}>
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value="all">All Types</TabsTrigger>
+            {KINDS.map((k) => (
+              <TabsTrigger key={k.key} value={k.key}>
+                {k.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-        <Select value={kind} onValueChange={setKind}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {KINDS.map((k) => (
-              <SelectItem key={k.key} value={k.key}>
-                {k.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {itemsQ.isLoading ? (
@@ -335,7 +330,7 @@ function FeedbackDialog({
   onSubmit: (v: z.infer<typeof feedbackSchema>) => void;
   pending: boolean;
 }) {
-  const [kind, setKind] = useState<z.infer<typeof feedbackSchema>["kind"]>("feature");
+  const [kind, setKind] = useState<z.infer<typeof feedbackSchema>["kind"]>("feature_request");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [rating, setRating] = useState(5);
@@ -393,20 +388,6 @@ function FeedbackDialog({
               maxLength={2000}
             />
           </div>
-          {kind === "rating" && (
-            <div>
-              <Label>Rating</Label>
-              <div className="mt-1 flex gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} onClick={() => setRating(n)} aria-label={`Rate ${n}`}>
-                    <Star
-                      className={`h-6 w-6 ${n <= rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -419,7 +400,6 @@ function FeedbackDialog({
                 kind,
                 title: title.trim(),
                 description: description.trim(),
-                rating: kind === "rating" ? rating : undefined,
               })
             }
           >

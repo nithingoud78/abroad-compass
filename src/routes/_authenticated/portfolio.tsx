@@ -11,8 +11,11 @@ import {
   Award,
   GraduationCap,
   Trophy,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { getPortfolioAnalysis } from "@/lib/ai/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -95,6 +98,10 @@ function PortfolioPage() {
     file_url: "",
   });
   const [aForm, setAForm] = useState({ title: "", description: "", achieved_on: "" });
+
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeFn = useServerFn(getPortfolioAnalysis);
 
   async function load() {
     if (!user) return;
@@ -207,6 +214,21 @@ function PortfolioPage() {
     load();
   };
 
+  const totalItems = projects.length + certs.length + achievements.length;
+  const progressPercent = totalItems >= 5 ? 100 : (totalItems / 5) * 100;
+
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    try {
+      const res = await analyzeFn({ data: { projects, certs, achievements } });
+      setAiAnalysis(res.analysis);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -215,8 +237,36 @@ function PortfolioPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight">
             Build a stand-out profile
           </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Organize projects, certificates, and achievements.
+          </p>
         </div>
       </header>
+
+      <div className="flex justify-end">
+        <Button
+          variant="secondary"
+          className="gap-2 bg-brand/10 text-brand hover:bg-brand/20"
+          onClick={handleAnalyze}
+          disabled={analyzing || aiAnalysis !== null}
+        >
+          {analyzing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          {aiAnalysis ? "AI Readiness Evaluated" : "Evaluate Profile Readiness"}
+        </Button>
+      </div>
+
+      {aiAnalysis && (
+        <div className="rounded-xl border bg-brand/5 p-5 text-sm text-foreground">
+          <div className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-brand">
+            <Sparkles className="h-5 w-5" /> AI Admission Committee Feedback
+          </div>
+          <p className="leading-relaxed">{aiAnalysis}</p>
+        </div>
+      )}
 
       <Card className="shadow-card">
         <CardContent className="space-y-3 p-5">

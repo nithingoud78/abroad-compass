@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 
 export function SiteNav() {
   const links = [
-    { label: "Features", to: "/#features" },
-    { label: "University Search", to: "/#features" },
-    { label: "German Learning", to: "/#features" },
-    { label: "Roadmap", to: "/#roadmap" },
-    { label: "About", to: "/#about" },
-    { label: "Blog", to: "/#blog" },
+    { label: "Features", href: "/#features" },
+    { label: "University Search", href: "/#university-search" },
+    { label: "German Learning", href: "/#german-learning" },
+    { label: "Roadmap", href: "/#roadmap" },
+    { label: "About", to: "/legal/$slug" as const, params: { slug: "about" } },
+    { label: "Blog", to: "/blog" as const },
   ];
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-xl">
@@ -24,13 +24,24 @@ export function SiteNav() {
         </Link>
         <nav className="hidden items-center gap-7 lg:flex">
           {links.map((l) => (
-            <a
-              key={l.label}
-              href={l.to}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {l.label}
-            </a>
+            <div key={l.label}>
+              {"href" in l ? (
+                <a
+                  href={l.href}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                </a>
+              ) : (
+                <Link
+                  to={l.to}
+                  params={"params" in l ? l.params : undefined}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                </Link>
+              )}
+            </div>
           ))}
         </nav>
         <div className="flex items-center gap-2">

@@ -6,6 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useServerFn } from "@tanstack/react-start";
+import { getCheckinAnalysis } from "@/lib/ai/ai.functions";
+import { Loader2, Sparkles } from "lucide-react";
+import { StandardPageLayout } from "@/components/app/StandardPageLayout";
 
 export const Route = createFileRoute("/_authenticated/check-in")({
   head: () => ({ meta: [{ title: "Daily Check-in — Abroad Compass" }] }),
@@ -36,6 +41,10 @@ function CheckInHistory() {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
 
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeFn = useServerFn(getCheckinAnalysis);
+
   useEffect(() => {
     if (!user) return;
     Promise.all([
@@ -59,15 +68,49 @@ function CheckInHistory() {
 
   const today = format(new Date(), "yyyy-MM-dd");
 
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    try {
+      const res = await analyzeFn({ data: { checkins: checkins.slice(0, 7) } }); // Last 7 days
+      setAiAnalysis(res.analysis);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-sm text-muted-foreground">Your German learning trail</p>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Daily Check-in</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Past entries are locked but always visible.
-        </p>
-      </header>
+    <StandardPageLayout title="Daily Check-in" subtitle="Your German learning trail">
+      <div className="-mt-4 text-sm text-muted-foreground">
+        Past entries are locked but always visible.
+      </div>
+      {checkins.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            variant="secondary"
+            className="gap-2 bg-brand/10 text-brand hover:bg-brand/20"
+            onClick={handleAnalyze}
+            disabled={analyzing || aiAnalysis !== null}
+          >
+            {analyzing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {aiAnalysis ? "AI Coach Feedback Ready" : "Get AI Coach Feedback"}
+          </Button>
+        </div>
+      )}
+
+      {aiAnalysis && (
+        <div className="rounded-xl border bg-brand/5 p-5 text-sm text-foreground">
+          <div className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-brand">
+            <Sparkles className="h-5 w-5" /> Your AI Language Coach
+          </div>
+          <p className="leading-relaxed">{aiAnalysis}</p>
+        </div>
+      )}
 
       {checkins.length === 0 && (
         <Card className="shadow-card">
@@ -148,6 +191,6 @@ function CheckInHistory() {
           );
         })}
       </div>
-    </div>
+    </StandardPageLayout>
   );
 }

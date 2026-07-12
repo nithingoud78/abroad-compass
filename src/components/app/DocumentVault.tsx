@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Plus, Trash2, Loader2, ExternalLink } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, ExternalLink, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { getDocumentAnalysis } from "@/lib/ai/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,6 +78,10 @@ export function DocumentVault({ compact = false }: { compact?: boolean }) {
     notes: "",
   });
 
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeFn = useServerFn(getDocumentAnalysis);
+
   async function load() {
     if (!user) return;
     setLoading(true);
@@ -136,97 +142,140 @@ export function DocumentVault({ compact = false }: { compact?: boolean }) {
 
   const list = compact ? docs.slice(0, 5) : docs;
 
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    try {
+      const res = await analyzeFn({ data: { documents: docs } });
+      setAiAnalysis(res.analysis);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="font-display text-base font-semibold">Document Vault</p>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add
+        <div className="flex gap-2">
+          {!compact && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2 bg-brand/10 text-brand hover:bg-brand/20"
+              onClick={handleAnalyze}
+              disabled={analyzing || aiAnalysis !== null}
+            >
+              {analyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {aiAnalysis ? "AI Review Complete" : "AI Review"}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add document</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 pt-2">
-              <Field label="Name">
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. APS certificate"
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Category">
-                  <Select
-                    value={form.category}
-                    onValueChange={(v) => setForm({ ...form, category: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          )}
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add document</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-2">
+                <Field label="Name">
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="e.g. APS certificate"
+                  />
                 </Field>
-                <Field label="Status">
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => setForm({ ...form, status: v as Doc["status"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s.replace("_", " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Category">
+                    <Select
+                      value={form.category}
+                      onValueChange={(v) => setForm({ ...form, category: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Status">
+                    <Select
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v as Doc["status"] })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s.replace("_", " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <Field label="Link (optional)">
+                  <Input
+                    value={form.link_url}
+                    onChange={(e) => setForm({ ...form, link_url: e.target.value })}
+                    placeholder="https://…"
+                  />
                 </Field>
+                <Field label="Expiry">
+                  <Input
+                    type="date"
+                    value={form.expiry_date}
+                    onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
+                  />
+                </Field>
+                <Field label="Notes">
+                  <Input
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  />
+                </Field>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button variant="ghost" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={save} disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                  </Button>
+                </div>
               </div>
-              <Field label="Link (optional)">
-                <Input
-                  value={form.link_url}
-                  onChange={(e) => setForm({ ...form, link_url: e.target.value })}
-                  placeholder="https://…"
-                />
-              </Field>
-              <Field label="Expiry">
-                <Input
-                  type="date"
-                  value={form.expiry_date}
-                  onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
-                />
-              </Field>
-              <Field label="Notes">
-                <Input
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
-              </Field>
-              <div className="flex justify-end gap-2 pt-1">
-                <Button variant="ghost" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={save} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {!compact && aiAnalysis && (
+        <div className="rounded-xl border bg-brand/5 p-4 text-sm text-foreground mb-3">
+          <div className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-brand">
+            <Sparkles className="h-4 w-4" /> AI Document Review
+          </div>
+          <div className="space-y-2 leading-relaxed">
+            {aiAnalysis.split("\n").map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>

@@ -20,7 +20,25 @@ import {
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, Shield, ShieldOff, Trash2, UserCog } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Loader2,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  MoreHorizontal,
+  UserCog,
+  Trash2,
+} from "lucide-react";
+import { useIsSuperAdmin } from "@/hooks/use-role";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({ meta: [{ title: "Users — Admin — Abroad Compass" }] }),
@@ -28,6 +46,8 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 });
 
 function UsersPage() {
+  const { isSuperAdmin } = useIsSuperAdmin();
+  const { user: currentUser } = useAuth();
   const list = useServerFn(listUsers);
   const setRole = useServerFn(setUserRole);
   const del = useServerFn(deleteUser);
@@ -47,7 +67,7 @@ function UsersPage() {
   });
 
   const roleMut = useMutation({
-    mutationFn: (v: { user_id: string; role: "admin" | "moderator" | "user"; grant: boolean }) =>
+    mutationFn: (v: { targetUserId: string; newRole: "super_admin" | "admin" | "user" }) =>
       setRole({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "users"] });
@@ -124,50 +144,97 @@ function UsersPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1">
-              {(["admin", "moderator"] as const).map((r) => {
-                const has = u.roles.includes(r);
-                return (
-                  <Button
-                    key={r}
-                    variant={has ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => roleMut.mutate({ user_id: u.user_id, role: r, grant: !has })}
-                    disabled={roleMut.isPending}
-                  >
-                    {has ? (
-                      <ShieldOff className="mr-1 h-3.5 w-3.5" />
-                    ) : (
-                      <Shield className="mr-1 h-3.5 w-3.5" />
-                    )}
-                    {has ? `Revoke ${r}` : `Make ${r}`}
-                  </Button>
-                );
-              })}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="sm" variant="destructive">
-                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this user?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This permanently removes the account and all their data. This action cannot be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={() => delMut.mutate(u.user_id)}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {currentUser?.id === u.user_id ? (
+                <Badge variant="outline" className="mr-2">
+                  Current Account
+                </Badge>
+              ) : u.roles.includes("super_admin") ? (
+                <Badge variant="secondary" className="mr-2">
+                  Super Admin
+                </Badge>
+              ) : isSuperAdmin ? (
+                <>
+                  {(() => {
+                    const dominantRole = u.roles.includes("admin") ? "admin" : "user";
+
+                    return (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" disabled={roleMut.isPending}>
+                            {roleMut.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Manage Role</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {dominantRole === "user" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                roleMut.mutate({ targetUserId: u.user_id, newRole: "admin" })
+                              }
+                            >
+                              <UserCog className="mr-2 h-4 w-4" />
+                              Promote to Admin
+                            </DropdownMenuItem>
+                          )}
+                          {dominantRole === "admin" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  roleMut.mutate({ targetUserId: u.user_id, newRole: "user" })
+                                }
+                              >
+                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                Demote to User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  roleMut.mutate({
+                                    targetUserId: u.user_id,
+                                    newRole: "super_admin",
+                                  })
+                                }
+                              >
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Promote to Super Admin
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    );
+                  })()}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This permanently removes the account and all their data. This action
+                          cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => delMut.mutate(u.user_id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              ) : null}
             </div>
           </Card>
         ))}

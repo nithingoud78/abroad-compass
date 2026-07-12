@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, Loader2 } from "lucide-react";
+import { Bell, BellRing, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/settings/notifications")({
+export const Route = createFileRoute("/_authenticated/notifications/settings")({
   head: () => ({
     meta: [
-      { title: "Notifications — Abroad Compass" },
+      { title: "Notification Settings — Abroad Compass" },
       { name: "description", content: "Manage in-app, browser, and reminder notifications." },
     ],
   }),
@@ -102,7 +102,14 @@ function NotificationsSettings() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <header>
+      <header className="space-y-2">
+        <Link
+          to="/notifications"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back
+        </Link>
         <h1 className="font-display text-3xl font-bold tracking-tight">Notifications</h1>
         <p className="text-sm text-muted-foreground">
           Choose which reminders you want. All notifications are in-app or in your browser — never
@@ -151,14 +158,14 @@ function NotificationsSettings() {
             onChange={(v) => save({ notify_deadline_reminders: v })}
           />
           <Row
-            label="Study reminders"
+            label="Daily reminders"
             hint="Daily German practice and streak nudges."
             checked={prefs.notify_study_reminders}
             onChange={(v) => save({ notify_study_reminders: v })}
           />
           <Row
-            label="Weekly summary in inbox (in-app)"
-            hint="A recap card on your dashboard every Monday."
+            label="Weekly summary"
+            hint="A recap of your progress every week in-app."
             checked={prefs.notify_email_digest}
             onChange={(v) => save({ notify_email_digest: v })}
           />

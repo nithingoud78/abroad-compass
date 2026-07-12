@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { adminStats } from "@/lib/admin/admin.functions";
+import { useRealtimeDashboard } from "@/hooks/use-realtime-dashboard";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
 });
 
 function AdminDashboard() {
+  useRealtimeDashboard();
   const call = useServerFn(adminStats);
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "stats"],
@@ -71,7 +73,11 @@ function AdminDashboard() {
               <c.icon className="h-4 w-4" />
             </div>
             <div className="mt-2 font-display text-2xl font-semibold">
-              {c.value.toLocaleString()}
+              {c.value === 0 ? (
+                <span className="text-sm text-muted-foreground font-normal">No data yet</span>
+              ) : (
+                c.value.toLocaleString()
+              )}
             </div>
           </Card>
         ))}

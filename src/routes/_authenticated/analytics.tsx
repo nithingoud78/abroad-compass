@@ -34,8 +34,11 @@ import {
   Flame,
 } from "lucide-react";
 import { useCurrency } from "@/hooks/use-currency";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { downloadPdfReport } from "@/lib/pdf-report";
 import { EmptyState } from "@/components/app/EmptyState";
+import { SummaryCard } from "@/components/app/SummaryCard";
+import { StandardPageLayout } from "@/components/app/StandardPageLayout";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -60,7 +63,7 @@ function AnalyticsPage() {
     enabled: !!user,
     queryFn: async () => {
       const since90 = format(subDays(new Date(), 89), "yyyy-MM-dd");
-      const [checkins, vocab, budget, tasks, unis, focus, streak, projects, docs] =
+      const [checkins, vocab, budget, tasks, unis, focus, projects, docs, ielts, dmat] =
         await Promise.all([
           supabase
             .from("daily_checkins")
@@ -85,12 +88,13 @@ function AnalyticsPage() {
             .from("focus_sessions" as never)
             .select("actual_minutes,mode,started_at")
             .gte("started_at", since90),
-          supabase.from("streaks").select("*").eq("user_id", user!.id).maybeSingle(),
           supabase.from("projects").select("id,status,created_at").eq("user_id", user!.id),
           supabase
             .from("documents")
             .select("id,category,status,updated_at")
             .eq("user_id", user!.id),
+          supabase.from("ielts_practice").select("*").eq("user_id", user!.id),
+          supabase.from("dmat_progress").select("*").eq("user_id", user!.id),
         ]);
       return {
         checkins: checkins.data ?? [],
@@ -103,9 +107,10 @@ function AnalyticsPage() {
           mode: string;
           started_at: string;
         }>,
-        streak: streak.data,
         projects: projects.data ?? [],
         docs: docs.data ?? [],
+        ielts: ielts.data ?? [],
+        dmat: dmat.data ?? [],
       };
     },
   });
@@ -159,9 +164,45 @@ function AnalyticsPage() {
     const mastered = d.vocab.filter((v) => v.mastered).length;
     const learning = d.vocab.length - mastered;
     return [
-      { name: "mastered", value: mastered },
-      { name: "learning", value: learning },
+      { name: "Mastered", value: mastered },
+      { name: "Learning", value: learning },
     ];
+  }, [d]);
+
+  // Compute IELTS stats
+  const ieltsBySkill = useMemo(() => {
+    if (!d?.ielts) return [];
+    const skills = ["Listening", "Reading", "Writing", "Speaking"];
+    return skills.map((s) => {
+      const records = d.ielts.filter((r: Record<string, unknown>) => r.skill === s);
+      // get the most recent or highest band
+      const latestBand = records.length > 0 ? (records[0].band as number) : 0;
+      return { skill: s, band: latestBand || 0 };
+    });
+  }, [d]);
+
+  // Compute dMAT stats
+  const dmatByTopic = useMemo(() => {
+    if (!d?.dmat) return [];
+    const topics = [
+      "Mathematics",
+      "Logical Reasoning",
+      "Pattern Recognition",
+      "Quantitative Analysis",
+      "Problem Solving",
+      "Analytical Thinking",
+      "Data Interpretation",
+      "Critical Thinking",
+    ];
+    return topics.map((t) => {
+      const records = d.dmat.filter((r: Record<string, unknown>) => r.topic === t);
+      const maxPct = records.reduce(
+        (acc: number, curr: Record<string, unknown>) =>
+          Math.max(acc, (curr.progress_pct as number) || 0),
+        0,
+      );
+      return { topic: t, progress: maxPct };
+    });
   }, [d]);
 
   const tasksByModule = useMemo(() => {
@@ -194,8 +235,7 @@ function AnalyticsPage() {
     : 0;
   const netSaved = totalIncome - totalExpense;
   const tasksDone = d ? d.tasks.filter((t) => t.status === "done").length : 0;
-  const streak = d?.streak?.current_streak ?? 0;
-  const longest = d?.streak?.longest_streak ?? 0;
+  const { globalStreak: streak, longestStreak: longest } = useDashboardData();
 
   function exportPdf() {
     downloadPdfReport("Abroad Compass — 90-day report", [
@@ -247,21 +287,17 @@ function AnalyticsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-sm text-muted-foreground">
-            Progress across learning, applications, budget and habits — last 90 days.
-          </p>
-        </div>
+    <StandardPageLayout
+      title="Analytics"
+      subtitle="Progress across learning, applications, budget and habits — last 90 days."
+      actions={
         <Button variant="outline" onClick={exportPdf}>
           <Download className="mr-2 h-4 w-4" />
           Export PDF
         </Button>
-      </header>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<TrendingUp />}
           label="Study minutes (30d)"
@@ -319,8 +355,8 @@ function AnalyticsPage() {
                 <AreaChart data={studyByDay}>
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--brand))" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="hsl(var(--brand))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--color-brand)" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="var(--color-brand)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -330,7 +366,7 @@ function AnalyticsPage() {
                   <Area
                     type="monotone"
                     dataKey="minutes"
-                    stroke="hsl(var(--brand))"
+                    stroke="var(--color-brand)"
                     fill="url(#g1)"
                   />
                 </AreaChart>
@@ -344,22 +380,28 @@ function AnalyticsPage() {
                 <CardTitle className="font-display text-base">Tasks by module</CardTitle>
               </CardHeader>
               <CardContent className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={tasksByModule}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="module" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="done" stackId="a" fill="hsl(var(--brand))" name="Done" />
-                    <Bar
-                      dataKey="open"
-                      stackId="a"
-                      fill="hsl(var(--muted-foreground))"
-                      name="Open"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {tasksByModule.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    No task data available.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={tasksByModule}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="module" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="done" stackId="a" fill="var(--color-brand)" name="Done" />
+                      <Bar
+                        dataKey="open"
+                        stackId="a"
+                        fill="var(--color-muted-foreground)"
+                        name="Open"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -367,15 +409,21 @@ function AnalyticsPage() {
                 <CardTitle className="font-display text-base">Applications funnel</CardTitle>
               </CardHeader>
               <CardContent className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={applicationsFunnel} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="stage" type="category" tick={{ fontSize: 11 }} width={100} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--brand))" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {applicationsFunnel.every((f) => f.count === 0) ? (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    No application data available.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={applicationsFunnel} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} />
+                      <YAxis dataKey="stage" type="category" tick={{ fontSize: 11 }} width={100} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="var(--color-brand)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -393,7 +441,7 @@ function AnalyticsPage() {
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={2} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="minutes" fill="hsl(var(--brand))" />
+                  <Bar dataKey="minutes" fill="var(--color-brand)" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -515,8 +563,56 @@ function AnalyticsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="exams" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-base">IELTS Latest Bands by Skill</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {ieltsBySkill.every((s) => s.band === 0) ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No IELTS data yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={ieltsBySkill}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <XAxis dataKey="skill" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} domain={[0, 9]} />
+                    <Tooltip />
+                    <Bar dataKey="band" fill="hsl(var(--brand))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-base">
+                dMAT / TestAS Syllabus Completion
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {dmatByTopic.every((t) => t.progress === 0) ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No dMAT progress yet.
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dmatByTopic} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                    <YAxis dataKey="topic" type="category" tick={{ fontSize: 10 }} width={120} />
+                    <Tooltip />
+                    <Bar dataKey="progress" fill="hsl(var(--brand))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
-    </div>
+    </StandardPageLayout>
   );
 }
 
@@ -543,17 +639,15 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <Card className="shadow-card">
-      <CardContent className="pt-5">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <div className="grid h-8 w-8 place-items-center rounded-md bg-muted [&>svg]:h-4 [&>svg]:w-4">
-            {icon}
-          </div>
-          <span className="text-xs uppercase tracking-wider">{label}</span>
+    <SummaryCard
+      icon={
+        <div className="grid h-6 w-6 place-items-center rounded-md bg-muted [&>svg]:h-3.5 [&>svg]:w-3.5 text-foreground">
+          {icon}
         </div>
-        <p className="mt-2 font-display text-2xl font-bold">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
-      </CardContent>
-    </Card>
+      }
+      title={label}
+      value={value}
+      subtitle={sub}
+    />
   );
 }

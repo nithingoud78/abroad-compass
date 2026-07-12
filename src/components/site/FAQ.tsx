@@ -28,7 +28,7 @@ const faqs = [
 export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="py-24">
+    <section id="faq" className="py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-brand">FAQ</span>

@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { DocumentVault } from "@/components/app/DocumentVault";
+import { useServerFn } from "@tanstack/react-start";
+import { getJourneyAnalysis } from "@/lib/ai/ai.functions";
+import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/germany-journey")({
   head: () => ({ meta: [{ title: "Germany Journey — Abroad Compass" }] }),
@@ -127,6 +130,10 @@ function JourneyPage() {
     due_date: "",
   });
 
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeFn = useServerFn(getJourneyAnalysis);
+
   async function load() {
     if (!user) return;
     setLoading(true);
@@ -218,85 +225,125 @@ function JourneyPage() {
     return Math.round((all.filter((t) => t.status === "done").length / all.length) * 100);
   }, [tasks]);
 
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    try {
+      const res = await analyzeFn({ data: { tasks } });
+      setAiAnalysis(res.analysis);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Germany Journey</p>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Your end-to-end roadmap
+            Your roadmap to reaching Germany.
           </h1>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add a task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 pt-2">
-              <Field label="Title">
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                />
-              </Field>
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="Phase">
-                  <Select value={phase} onValueChange={setPhase}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PHASES.map((p) => (
-                        <SelectItem key={p.key} value={p.key}>
-                          {p.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Priority">
-                  <Select
-                    value={form.priority}
-                    onValueChange={(v) => setForm({ ...form, priority: v as Task["priority"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(["low", "medium", "high", "urgent"] as const).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Due">
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            className="gap-2 bg-brand/10 text-brand hover:bg-brand/20"
+            onClick={handleAnalyze}
+            disabled={analyzing || aiAnalysis !== null}
+          >
+            {analyzing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {aiAnalysis ? "AI Guide Ready" : "Ask AI Guide"}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add task
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add a task</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-2">
+                <Field label="Title">
                   <Input
-                    type="date"
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
                   />
                 </Field>
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Phase">
+                    <Select value={phase} onValueChange={setPhase}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PHASES.map((p) => (
+                          <SelectItem key={p.key} value={p.key}>
+                            {p.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Priority">
+                    <Select
+                      value={form.priority}
+                      onValueChange={(v) => setForm({ ...form, priority: v as Task["priority"] })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(["low", "medium", "high", "urgent"] as const).map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {p}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Due">
+                    <Input
+                      type="date"
+                      value={form.due_date}
+                      onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button variant="ghost" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={addTask} disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-end gap-2 pt-1">
-                <Button variant="ghost" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={addTask} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
+
+      {aiAnalysis && (
+        <div className="rounded-xl border bg-brand/5 p-5 text-sm text-foreground">
+          <div className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-brand">
+            <Sparkles className="h-5 w-5" /> Your AI Guide Action Plan
+          </div>
+          <div className="space-y-2 leading-relaxed">
+            {aiAnalysis.split("\n").map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Card className="shadow-card">
         <CardContent className="space-y-2 p-5">

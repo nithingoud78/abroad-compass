@@ -1,433 +1,303 @@
-// App-internal AI RPCs (thread CRUD, one-shot generation, document review).
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { generateText } from "ai";
+import { generateText, generateObject } from "ai";
 import { createAiProvider } from "./provider.server";
-import { AI_MODEL_IDS } from "./models";
-import { SYSTEM_PROMPTS, type Capability } from "./prompts";
 
-const capabilityEnum = z.enum([
-  "general",
-  "recommend",
-  "sop",
-  "lor",
-  "cv",
-  "coach",
-  "tutor",
-  "interview",
-  "planner",
-  "budget",
-  "visa",
-  "aps",
-  "review",
-]);
-
-export const createThread = createServerFn({ method: "POST" })
+export const updateAiUserSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        title: z.string().min(1).max(200).default("New conversation"),
-        capability: capabilityEnum.default("general"),
-        model: z.string().default("google/gemini-3-flash-preview"),
-      })
-      .parse(i),
+  .validator(
+    (i: { provider?: string; model?: string; custom_api_key?: string; base_url?: string }) => i,
   )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
-      .from("ai_threads")
-      .insert({
-        user_id: context.userId,
-        title: data.title,
-        capability: data.capability,
-        model: data.model,
-        system_prompt: SYSTEM_PROMPTS[data.capability as Capability],
-      })
-      .select("*")
-      .single();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
+      .from("ai_user_settings")
+      .upsert({ user_id: context.userId, ...data }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
-    return row;
+    return { success: true };
   });
 
-export const listThreads = createServerFn({ method: "GET" })
+export const testAiConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("ai_threads")
-      .select("id, title, capability, model, pinned, updated_at")
-      .is("archived_at", null)
-      .order("pinned", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    return data;
-  });
-
-export const loadThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ threadId: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const [thread, messages] = await Promise.all([
-      context.supabase.from("ai_threads").select("*").eq("id", data.threadId).maybeSingle(),
-      context.supabase
-        .from("ai_messages")
-        .select("id, role, parts, created_at")
-        .eq("thread_id", data.threadId)
-        .order("created_at"),
-    ]);
-    if (thread.error) throw new Error(thread.error.message);
-    if (!thread.data) throw new Error("Thread not found");
-    if (messages.error) throw new Error(messages.error.message);
-    return { thread: thread.data, messages: messages.data ?? [] };
-  });
-
-export const deleteThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ threadId: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("ai_threads").delete().eq("id", data.threadId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const renameThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ threadId: z.string().uuid(), title: z.string().min(1).max(200) }).parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("ai_threads")
-      .update({ title: data.title })
-      .eq("id", data.threadId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-// One-shot: improve arbitrary text.
-export const improveText = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        text: z.string().min(10).max(20000),
-        capability: capabilityEnum.default("sop"),
-        instruction: z.string().max(1000).optional(),
-        model: z.string().default("google/gemini-3-flash-preview"),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const provider = createAiProvider();
-    const modelId = AI_MODEL_IDS.includes(data.model as never)
-      ? data.model
-      : "google/gemini-3-flash-preview";
-    const started = Date.now();
-    const { text, usage } = await generateText({
-      model: provider(modelId),
-      system: SYSTEM_PROMPTS[data.capability as Capability],
-      prompt: `${data.instruction ?? "Improve the following text. Return the improved version only."}\n\n---\n${data.text}`,
-    });
-    await context.supabase.from("ai_usage").insert({
-      user_id: context.userId,
-      model: modelId,
-      capability: data.capability,
-      tokens_in: usage?.inputTokens ?? 0,
-      tokens_out: usage?.outputTokens ?? 0,
-      latency_ms: Date.now() - started,
-      status: "ok",
-    });
-    return { text };
-  });
-
-// Review a document's text (already-extracted) and store the result.
-export const reviewDocumentText = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        documentId: z.string().uuid(),
-        text: z.string().min(20).max(50000),
-        kind: z
-          .enum([
-            "cv",
-            "sop",
-            "lor",
-            "motivation",
-            "transcript",
-            "project",
-            "certificate",
-            "research",
-          ])
-          .default("cv"),
-        model: z.string().default("google/gemini-3-flash-preview"),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const provider = createAiProvider();
-    const modelId = AI_MODEL_IDS.includes(data.model as never)
-      ? data.model
-      : "google/gemini-3-flash-preview";
-    const { text } = await generateText({
-      model: provider(modelId),
-      system: SYSTEM_PROMPTS.review,
-      prompt: `Document type: ${data.kind}\n\nReturn only valid JSON matching:
-{"score":0-100,"summary":"","grammar":[],"ats":[],"missing":[],"suggestions":[]}\n\n---\n${data.text}`,
-    });
-    let parsed: {
-      score?: number;
-      summary?: string;
-      grammar?: string[];
-      ats?: string[];
-      missing?: string[];
-      suggestions?: string[];
-    } = {};
+    const ai = await createAiProvider(context.userId);
+    if (!ai) {
+      return { success: false, message: "AI provider is not configured properly." };
+    }
     try {
-      const match = text.match(/\{[\s\S]*\}/);
-      parsed = match ? JSON.parse(match[0]) : {};
-    } catch {
-      parsed = { summary: text.slice(0, 500) };
+      await generateText({
+        model: ai(),
+        system: "You are a helpful assistant.",
+        prompt: "Say 'OK' if you can read this.",
+      });
+      return { success: true, message: "Connection successful!" };
+    } catch (e: unknown) {
+      const err = e as Error;
+      return { success: false, message: err.message || "Failed to connect to AI provider." };
     }
-    const { data: row, error } = await context.supabase
-      .from("document_reviews")
-      .insert({
-        user_id: context.userId,
-        document_id: data.documentId,
-        score: typeof parsed.score === "number" ? Math.round(parsed.score) : null,
-        summary: parsed.summary ?? null,
-        feedback: parsed,
-        model: modelId,
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
   });
 
-// Toggle thread pin/archive.
-export const setThreadFlags = createServerFn({ method: "POST" })
+export const getUniversityRecommendation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z
       .object({
-        threadId: z.string().uuid(),
-        pinned: z.boolean().optional(),
-        archived: z.boolean().optional(),
-        folder: z.string().max(60).nullable().optional(),
+        universityName: z.string(),
+        course: z.string(),
+        cgpa: z.string().optional(),
+        userProfile: z.any().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const patch: {
-      pinned?: boolean;
-      archived_at?: string | null;
-      folder?: string | null;
-    } = {};
-    if (data.pinned !== undefined) patch.pinned = data.pinned;
-    if (data.archived !== undefined)
-      patch.archived_at = data.archived ? new Date().toISOString() : null;
-    if (data.folder !== undefined) patch.folder = data.folder;
-    if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await context.supabase
-      .from("ai_threads")
-      .update(patch)
-      .eq("id", data.threadId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+    const ai = await createAiProvider(context.userId);
+    if (!ai)
+      return { recommendation: "AI is not configured. Please check your settings.", confidence: 0 };
 
-// Aggregate AI usage for the current user.
-export const aiUsageSummary = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await context.supabase
-      .from("ai_usage")
-      .select("model, capability, tokens_in, tokens_out, latency_ms, created_at, status")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    if (error) throw new Error(error.message);
-    const rows = data ?? [];
-    let totalIn = 0,
-      totalOut = 0,
-      count = 0,
-      errors = 0;
-    const byModel: Record<string, { count: number; tokens: number }> = {};
-    const byCap: Record<string, number> = {};
-    for (const r of rows) {
-      count++;
-      if (r.status && r.status !== "ok") errors++;
-      totalIn += r.tokens_in ?? 0;
-      totalOut += r.tokens_out ?? 0;
-      const m = r.model ?? "unknown";
-      byModel[m] = byModel[m] ?? { count: 0, tokens: 0 };
-      byModel[m].count++;
-      byModel[m].tokens += (r.tokens_in ?? 0) + (r.tokens_out ?? 0);
-      const c = r.capability ?? "general";
-      byCap[c] = (byCap[c] ?? 0) + 1;
-    }
-    return {
-      count,
-      errors,
-      totalIn,
-      totalOut,
-      totalTokens: totalIn + totalOut,
-      byModel,
-      byCap,
-      recent: rows.slice(0, 50),
-    };
-  });
-
-// Prompt template CRUD.
-export const listPromptTemplates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("ai_prompt_templates")
-      .select("*")
-      .order("is_favorite", { ascending: false })
-      .order("updated_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
-
-const templateInput = z.object({
-  name: z.string().min(1).max(120),
-  category: z.string().min(1).max(60).default("general"),
-  body: z.string().min(1).max(8000),
-  variables: z.array(z.string().max(60)).max(20).default([]),
-  is_favorite: z.boolean().default(false),
-});
-
-export const upsertPromptTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ id: z.string().uuid().optional() }).merge(templateInput).parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    if (data.id) {
-      const { error } = await context.supabase
-        .from("ai_prompt_templates")
-        .update({
-          name: data.name,
-          category: data.category,
-          body: data.body,
-          variables: data.variables,
-          is_favorite: data.is_favorite,
-        })
-        .eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { id: data.id };
-    }
-    const { data: row, error } = await context.supabase
-      .from("ai_prompt_templates")
-      .insert({
-        user_id: context.userId,
-        name: data.name,
-        category: data.category,
-        body: data.body,
-        variables: data.variables,
-        is_favorite: data.is_favorite,
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
-  });
-
-export const deletePromptTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("ai_prompt_templates").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-// AI-assisted university recommendations. Takes the pre-scored buckets and
-// asks the model for concise rationale + missing-gap suggestions per uni.
-export const generateRecommendationNotes = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        universities: z
-          .array(
-            z.object({
-              id: z.string().uuid(),
-              name: z.string(),
-              matchScore: z.number(),
-              bucket: z.string(),
-              gaps: z.array(z.string()).default([]),
-            }),
-          )
-          .min(1)
-          .max(20),
-        model: z.string().default("google/gemini-3-flash-preview"),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const provider = createAiProvider();
-    const modelId = AI_MODEL_IDS.includes(data.model as never)
-      ? data.model
-      : "google/gemini-3-flash-preview";
-
-    const started = Date.now();
-    const { text, usage } = await generateText({
-      model: provider(modelId),
-      system: SYSTEM_PROMPTS.recommend,
-      prompt: `For each university below, give a 2-sentence rationale explaining the fit and one concrete action the student can take to improve odds.
-Return JSON array: [{"id":"...","reasoning":"...","action":"..."}]
-Universities:
-${JSON.stringify(data.universities, null, 2)}`,
-    });
-
-    let parsed: Array<{ id: string; reasoning?: string; action?: string }> = [];
     try {
-      const m = text.match(/\[[\s\S]*\]/);
-      parsed = m ? JSON.parse(m[0]) : [];
-    } catch {
-      parsed = [];
+      console.log(`[AI Execution] Starting getUniversityRecommendation...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are an expert study-abroad consultant for Germany. Provide a short, structured evaluation (3 sentences max) of the candidate's chances at this university. Be realistic.",
+        prompt: `University: ${data.universityName}\nCourse: ${data.course}\nCGPA: ${data.cgpa || "Unknown"}\nProfile: ${JSON.stringify(data.userProfile)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { recommendation: text, confidence: 85 };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getUniversityRecommendation:`, e);
+      return { recommendation: "Analysis failed due to a system error.", confidence: 0 };
     }
+  });
 
-    // Persist as recommendation rows (upsert by uni + user).
-    const rows = data.universities.map((u) => {
-      const note = parsed.find((p) => p.id === u.id);
-      return {
-        user_id: context.userId,
-        university_id: u.id,
-        bucket: (u.bucket === "ambitious" ? "moderate" : u.bucket) as "safe" | "moderate" | "dream",
-        match_score: u.matchScore,
-        acceptance_probability: null as number | null,
-        reasoning: note?.reasoning ?? null,
-        gaps: u.gaps,
-        scholarships: [],
-        model: modelId,
-      };
-    });
-    // Clear stale then insert new (simple strategy — RLS-scoped).
-    await context.supabase
-      .from("university_recommendations")
-      .delete()
-      .eq("user_id", context.userId);
-    if (rows.length) {
-      const { error } = await context.supabase.from("university_recommendations").insert(rows);
-      if (error) throw new Error(error.message);
+export const getUniversityComparison = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        universities: z.array(z.any()),
+        userProfile: z.any().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { error: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getUniversityComparison...`);
+      const { object } = await generateObject({
+        model: ai(),
+        system:
+          "You are an expert study-abroad consultant. Compare the provided list of two universities in depth based on the student's profile. You MUST cite sources (like DAAD, University Website, CHE Ranking, QS, Official Course Page) for every major statement. NEVER hallucinate.",
+        prompt: `Profile: ${JSON.stringify(data.userProfile || {})}\nUniversities: ${JSON.stringify(data.universities)}`,
+        schema: z.object({
+          betterMatch: z.string().describe("Which university better matches the student's profile"),
+          prosA: z.array(z.string()).describe("Pros for University A"),
+          consA: z.array(z.string()).describe("Cons for University A"),
+          prosB: z.array(z.string()).describe("Pros for University B"),
+          consB: z.array(z.string()).describe("Cons for University B"),
+          competitiveness: z.string().describe("Admission competitiveness comparison"),
+          curriculum: z.string().describe("Curriculum differences"),
+          research: z.string().describe("Research opportunities comparison"),
+          internship: z.string().describe("Internship ecosystem comparison"),
+          cost: z.string().describe("Cost comparison"),
+          living: z.string().describe("Living environment comparison"),
+          jobs: z.string().describe("Job opportunities comparison"),
+          studentAProfile: z.string().describe("Which student should choose University A"),
+          studentBProfile: z.string().describe("Which student should choose University B"),
+          recommendation: z.string().describe("Final recommendation"),
+          confidence: z.number().describe("Confidence level (0-100)"),
+          sources: z.array(z.string()).describe("List of sources used"),
+        }),
+      });
+      console.log(`[AI Execution] Success.`);
+      return { analysis: object };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getUniversityComparison:`, e);
+      return { error: "Analysis failed due to a system error." };
     }
+  });
 
-    await context.supabase.from("ai_usage").insert({
-      user_id: context.userId,
-      model: modelId,
-      capability: "recommend",
-      tokens_in: usage?.inputTokens ?? 0,
-      tokens_out: usage?.outputTokens ?? 0,
-      latency_ms: Date.now() - started,
-      status: "ok",
-    });
+export const getBudgetAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        entries: z.array(z.any()),
+        totals: z.any(),
+        goals: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { analysis: "AI is not configured." };
 
-    return { count: rows.length, notes: parsed };
+    try {
+      console.log(`[AI Execution] Starting getBudgetAnalysis...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are a financial advisor for international students in Germany. Analyze the budget and give 3 bullet points: 1) Overspending warning, 2) Saving suggestion, 3) Monthly forecast.",
+        prompt: `Totals: ${JSON.stringify(data.totals)}\nEntries: ${JSON.stringify(data.entries)}\nGoals: ${JSON.stringify(data.goals)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { analysis: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getBudgetAnalysis:`, e);
+      return { analysis: "Analysis failed due to a system error." };
+    }
+  });
+
+export const getDashboardSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        profileName: z.string().nullable(),
+        daysToGermany: z.number(),
+        insights: z.array(z.any()),
+        tasks: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { summary: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getDashboardSummary...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are an AI study-abroad mentor. Give a personalized, encouraging 2-sentence summary based on the student's dashboard data. Focus on the most urgent task or insight.",
+        prompt: `Name: ${data.profileName}\nDays left: ${data.daysToGermany}\nInsights: ${JSON.stringify(data.insights)}\nTasks: ${JSON.stringify(data.tasks)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { summary: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getDashboardSummary:`, e);
+      return { summary: "Analysis failed due to a system error." };
+    }
+  });
+
+export const getCheckinAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        checkins: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { analysis: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getCheckinAnalysis...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are a motivational coach for language learning. Look at the student's recent daily check-ins. Provide a short 3-sentence encouraging message, noting trends like consistency or areas where they can improve (like vocabulary or study time).",
+        prompt: `Checkins: ${JSON.stringify(data.checkins)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { analysis: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getCheckinAnalysis:`, e);
+      return { analysis: "Analysis failed due to a system error." };
+    }
+  });
+
+export const getJourneyAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        tasks: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { analysis: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getJourneyAnalysis...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are an expert guide for moving to Germany. Review the user's task list across all phases. Give a 3-bullet action plan on what they must focus on right now.",
+        prompt: `Tasks: ${JSON.stringify(data.tasks)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { analysis: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getJourneyAnalysis:`, e);
+      return { analysis: "Analysis failed due to a system error." };
+    }
+  });
+
+export const getDocumentAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        documents: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { analysis: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getDocumentAnalysis...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are an expert document reviewer for German university applications. Review the user's document vault status. Mention which documents are missing, what's pending, and what they need to upload next. Keep it to 3 bullet points.",
+        prompt: `Documents: ${JSON.stringify(data.documents)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { analysis: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getDocumentAnalysis:`, e);
+      return { analysis: "Analysis failed due to a system error." };
+    }
+  });
+
+export const getPortfolioAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) =>
+    z
+      .object({
+        projects: z.array(z.any()),
+        certs: z.array(z.any()),
+        achievements: z.array(z.any()),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ai = await createAiProvider(context.userId);
+    if (!ai) return { analysis: "AI is not configured." };
+
+    try {
+      console.log(`[AI Execution] Starting getPortfolioAnalysis...`);
+      const { text } = await generateText({
+        model: ai(),
+        system:
+          "You are an admission committee member for a German university. Review the student's portfolio (projects, certificates, achievements). Give a short 3-sentence evaluation of their profile strength and one area to improve.",
+        prompt: `Projects: ${JSON.stringify(data.projects)}\nCertificates: ${JSON.stringify(data.certs)}\nAchievements: ${JSON.stringify(data.achievements)}`,
+      });
+      console.log(`[AI Execution] Success. Generated ${text.length} chars.`);
+      return { analysis: text };
+    } catch (e: unknown) {
+      console.error(`[AI Execution] Failed in getPortfolioAnalysis:`, e);
+      return { analysis: "Analysis failed due to a system error." };
+    }
   });

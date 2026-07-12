@@ -4,6 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { useStudentProfile } from "@/hooks/use-student-profile";
 import { scoreAcceptance, BAND_LABEL, BAND_TONE, type UniversityForCheck } from "@/lib/acceptance";
+import { useState, useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getUniversityRecommendation } from "@/lib/ai/ai.functions";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export function AcceptanceDialog({
   open,
@@ -15,8 +20,38 @@ export function AcceptanceDialog({
   university: UniversityForCheck | null;
 }) {
   const { profile, loading } = useStudentProfile();
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const getRecommendation = useServerFn(getUniversityRecommendation);
 
   const result = university && profile ? scoreAcceptance(profile, university) : null;
+
+  useEffect(() => {
+    if (!open) {
+      setAiAnalysis(null);
+      setAnalyzing(false);
+    }
+  }, [open]);
+
+  async function handleAnalyze() {
+    if (!university) return;
+    setAnalyzing(true);
+    try {
+      const res = await getRecommendation({
+        data: {
+          universityName: university.name,
+          course: university.course ?? "",
+          cgpa: university.cgpa_required?.toString(),
+          userProfile: profile,
+        },
+      });
+      setAiAnalysis(res.recommendation);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,6 +122,31 @@ export function AcceptanceDialog({
                   <li key={i}>{s}</li>
                 ))}
               </Section>
+            )}
+
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleAnalyze}
+                disabled={analyzing || aiAnalysis !== null}
+              >
+                {analyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-brand" />
+                )}
+                {aiAnalysis ? "Analysis Completed" : "Admission Analysis"}
+              </Button>
+            </div>
+
+            {aiAnalysis && (
+              <div className="rounded-xl border bg-brand/5 p-4 text-sm text-foreground">
+                <div className="mb-2 flex items-center gap-2 font-semibold text-brand">
+                  <Sparkles className="h-4 w-4" /> Smart Insight
+                </div>
+                <p className="leading-relaxed">{aiAnalysis}</p>
+              </div>
             )}
           </div>
         )}

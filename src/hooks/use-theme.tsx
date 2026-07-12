@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 
 type Theme = "light" | "dark" | "system";
 type Ctx = { theme: Theme; setTheme: (t: Theme) => void; resolved: "light" | "dark" };
@@ -18,28 +18,42 @@ function applyTheme(t: Theme): "light" | "dark" {
   return resolved;
 }
 
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  return (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "light";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const [resolved, setResolved] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
+    const t = getInitialTheme();
+    return t === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : t;
+  });
 
   useEffect(() => {
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "system";
-    setThemeState(stored);
-    setResolved(applyTheme(stored));
+    const t = getInitialTheme();
+    setThemeState(t);
+    setResolved(applyTheme(t));
+
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
-      const t = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "system";
-      if (t === "system") setResolved(applyTheme("system"));
+      const currentT = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "light";
+      if (currentT === "system") setResolved(applyTheme("system"));
     };
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  const setTheme = (t: Theme) => {
+  const setTheme = useCallback((t: Theme) => {
     localStorage.setItem(STORAGE_KEY, t);
     setThemeState(t);
     setResolved(applyTheme(t));
-  };
+  }, []);
 
   return <ThemeCtx.Provider value={{ theme, setTheme, resolved }}>{children}</ThemeCtx.Provider>;
 }

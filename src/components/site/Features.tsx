@@ -73,11 +73,18 @@ export function Features() {
           {features.map((f, i) => (
             <motion.div
               key={f.title}
+              id={
+                f.title === "German Learning Suite"
+                  ? "german-learning"
+                  : f.title === "University Shortlisting"
+                    ? "university-search"
+                    : undefined
+              }
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.4, delay: i * 0.04 }}
-              className="group rounded-2xl border border-border/60 bg-card p-6 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+              className="group rounded-2xl border border-border/60 bg-card p-6 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] scroll-mt-24"
             >
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                 <f.icon className="h-5 w-5" />

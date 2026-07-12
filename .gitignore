@@ -30,3 +30,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.preview
+.env.*
+# Additional Security and Build Ignore
+build/
+.vercel/
+coverage/
+supabase/.temp/
+.tmp/
+.cache/
+Thumbs.db

@@ -15,10 +15,14 @@ import {
   Settings as SettingsIcon,
   Compass,
   Sparkles,
-  FileText,
   Shield,
   Bell,
   CalendarDays,
+  Languages,
+  BookOpen,
+  Target,
+  Users,
+  HeartHandshake,
 } from "lucide-react";
 
 import {
@@ -36,27 +40,31 @@ import {
 
 const primary = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "AI Assistant", url: "/assistant", icon: Sparkles },
-  { title: "Document Review", url: "/assistant/review", icon: FileText },
   { title: "Daily Check-in", url: "/check-in", icon: CheckCircle2 },
   { title: "German Learning", url: "/german", icon: GraduationCap },
-  { title: "Vocabulary", url: "/vocabulary", icon: BookA },
-  { title: "Germany Journey", url: "/germany-journey", icon: Plane },
+  { title: "Goethe / TELC", url: "/goethe", icon: BookA },
+  { title: "IELTS", url: "/ielts", icon: Languages },
+  { title: "dMAT / TestAS", url: "/dmat", icon: BookOpen },
+  { title: "University Shortlisting", url: "/university", icon: Building2 },
+  { title: "Budget", url: "/budget", icon: Wallet },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Goals", url: "/goals", icon: Target },
+  { title: "Community", url: "/friends", icon: Users },
+  { title: "Support", url: "/support", icon: HeartHandshake },
 ];
 
 const planning = [
-  { title: "University Shortlisting", url: "/university", icon: Building2 },
+  { title: "Vocabulary", url: "/vocabulary", icon: BookA },
+  { title: "Germany Journey", url: "/germany-journey", icon: Plane },
   { title: "Calendar", url: "/calendar", icon: CalendarDays },
-  { title: "Budget", url: "/budget", icon: Wallet },
   { title: "Portfolio", url: "/portfolio", icon: FolderKanban },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ];
 
 const more = [
-  { title: "Tools", url: "/tools", icon: Wrench },
   { title: "Blog", url: "/blog", icon: Newspaper },
+  { title: "Tools", url: "/tools", icon: Wrench },
   { title: "Feedback", url: "/feedback", icon: MessageSquare },
-  { title: "Notifications", url: "/settings/notifications", icon: Bell },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Security", url: "/settings/security", icon: Shield },
   { title: "Settings", url: "/settings", icon: SettingsIcon },
 ];

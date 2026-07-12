@@ -44,9 +44,9 @@ export function Hero() {
               variant="outline"
               className="rounded-full border-border bg-background/70 backdrop-blur"
             >
-              <a href="#features">
-                <Play className="mr-1 h-4 w-4" /> Explore Platform
-              </a>
+              <Link to="/legal/$slug" params={{ slug: "contact" }}>
+                <Play className="mr-1 h-4 w-4" /> Talk to us
+              </Link>
             </Button>
           </div>
         </motion.div>

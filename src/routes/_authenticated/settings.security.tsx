@@ -9,6 +9,7 @@ import {
   regenerateBackupCodes,
   countBackupCodes,
 } from "@/lib/security/security.functions";
+import { updateAiUserSettings } from "@/lib/ai/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,6 +65,21 @@ function SecurityPage() {
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
   const [pwd, setPwd] = useState("");
   const [pwdBusy, setPwdBusy] = useState(false);
+  const [aiProvider, setAiProvider] = useState("google");
+  const [aiKey, setAiKey] = useState("");
+
+  const updateAiFn = useServerFn(updateAiUserSettings);
+  const aiMut = useMutation({
+    mutationFn: () =>
+      updateAiFn({
+        data: {
+          provider: aiProvider,
+          custom_api_key: aiKey || undefined,
+        },
+      }),
+    onSuccess: () => toast.success("AI Configuration saved"),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const revokeMut = useMutation({
     mutationFn: () => revokeFn(),
@@ -157,6 +173,48 @@ function SecurityPage() {
               {regenMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Generate 10 new codes
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Key className="h-4 w-4 text-brand" /> Bring Your Own Key (Optional)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Override the global AI provider with your own API key.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1">
+              <Label htmlFor="ai-provider">Provider</Label>
+              <select
+                id="ai-provider"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={aiProvider}
+                onChange={(e) => setAiProvider(e.target.value)}
+              >
+                <option value="google">Google AI Studio</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="ai-key">API Key</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="ai-key"
+                  type="password"
+                  placeholder="Leave empty to use global key"
+                  value={aiKey}
+                  onChange={(e) => setAiKey(e.target.value)}
+                />
+                <Button onClick={() => aiMut.mutate()} disabled={aiMut.isPending}>
+                  {aiMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

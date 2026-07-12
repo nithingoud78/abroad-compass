@@ -26,6 +26,17 @@ export type DashboardData = {
   insights: Insight[];
   journeyCompletionPct: number;
   acceptanceTopBand: string | null;
+  ieltsTargetBand: number | null;
+  ieltsOverallPct: number;
+  dmatOverallPct: number;
+  ieltsExamDate: string | null;
+  dmatExamDate: string | null;
+  globalStreak: number;
+  longestStreak: number;
+  ieltsWeeklyHours: number;
+  dmatWeeklyHours: number;
+  dmatCurrentTopic: string | null;
+  dmatNextTopic: string | null;
 };
 
 type TaskRow = {
@@ -56,6 +67,17 @@ const DEFAULT: DashboardData = {
   insights: [],
   journeyCompletionPct: 0,
   acceptanceTopBand: null,
+  ieltsTargetBand: null,
+  ieltsOverallPct: 0,
+  dmatOverallPct: 0,
+  ieltsExamDate: null,
+  dmatExamDate: null,
+  globalStreak: 0,
+  longestStreak: 0,
+  ieltsWeeklyHours: 0,
+  dmatWeeklyHours: 0,
+  dmatCurrentTopic: null,
+  dmatNextTopic: null,
 };
 
 const CORE_DOCS = [
@@ -86,57 +108,245 @@ export function useDashboardData(): DashboardData {
         "yyyy-MM-dd",
       );
 
-      const [tasks, budget, docs, checkins, vocab, unis, profile, edu, certs, projects, goal] =
-        await Promise.all([
-          supabase
-            .from("tasks")
-            .select("id,title,due_date,priority,status,module")
-            .eq("user_id", user!.id)
-            .neq("status", "done")
-            .order("due_date", { ascending: true, nullsFirst: false })
-            .limit(50),
-          supabase
-            .from("budget_entries")
-            .select("amount,kind,occurred_on,description")
-            .eq("user_id", user!.id)
-            .gte("occurred_on", monthStart),
-          supabase
-            .from("documents")
-            .select("id,name,category,status,updated_at")
-            .eq("user_id", user!.id),
-          supabase
-            .from("daily_checkins")
-            .select("checkin_date,study_duration_minutes")
-            .eq("user_id", user!.id)
-            .gte("checkin_date", since),
-          supabase
-            .from("vocabulary")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user!.id),
-          supabase
-            .from("universities")
-            .select("id,name,application_stage,application_status,acceptance_chance,deadline")
-            .eq("user_id", user!.id),
-          supabase
-            .from("profiles")
-            .select("current_german_level,target_degree")
-            .eq("user_id", user!.id)
-            .maybeSingle(),
-          supabase
-            .from("education")
-            .select("ug_cgpa,total_credits,intermediate")
-            .eq("user_id", user!.id)
-            .maybeSingle(),
-          supabase.from("certificates").select("id,cert_type").eq("user_id", user!.id),
-          supabase.from("projects").select("id").eq("user_id", user!.id),
-          supabase
-            .from("savings_goals")
-            .select("target_amount")
-            .eq("user_id", user!.id)
-            .maybeSingle(),
-        ]);
+      const [
+        tasks,
+        budget,
+        docs,
+        checkins,
+        vocab,
+        unis,
+        profile,
+        edu,
+        certs,
+        projects,
+        goal,
+        ieltsSettingsObj,
+        ieltsPracticeObj,
+        dmatProgressObj,
+        dmatSettingsObj,
+        adminScheduleObj,
+      ] = await Promise.all([
+        supabase
+          .from("tasks")
+          .select("id,title,due_date,priority,status,module")
+          .eq("user_id", user!.id)
+          .neq("status", "done")
+          .order("due_date", { ascending: true, nullsFirst: false })
+          .limit(50),
+        supabase
+          .from("budget_entries")
+          .select("amount,kind,occurred_on,description")
+          .eq("user_id", user!.id)
+          .gte("occurred_on", monthStart),
+        supabase
+          .from("documents")
+          .select("id,name,category,status,updated_at")
+          .eq("user_id", user!.id),
+        supabase
+          .from("daily_checkins")
+          .select("checkin_date,study_duration_minutes")
+          .eq("user_id", user!.id)
+          .order("checkin_date", { ascending: false }),
+        supabase
+          .from("vocabulary")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user!.id),
+        supabase
+          .from("universities")
+          .select("id,name,application_stage,application_status,acceptance_chance,deadline")
+          .eq("user_id", user!.id),
+        supabase
+          .from("profiles")
+          .select("current_german_level,target_degree")
+          .eq("user_id", user!.id)
+          .maybeSingle(),
+        supabase
+          .from("education")
+          .select("ug_cgpa,total_credits,intermediate")
+          .eq("user_id", user!.id)
+          .maybeSingle(),
+        supabase.from("certificates").select("id,cert_type").eq("user_id", user!.id),
+        supabase.from("projects").select("id").eq("user_id", user!.id),
+        supabase
+          .from("savings_goals")
+          .select("target_amount")
+          .eq("user_id", user!.id)
+          .maybeSingle(),
+        supabase.from("ielts_settings").select("*").eq("user_id", user!.id).maybeSingle(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from as any)("ielts_practice").select("*").eq("user_id", user!.id),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from as any)("dmat_progress").select("*").eq("user_id", user!.id),
+        supabase.from("dmat_settings").select("*").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("admin_exam_schedule").select("*").eq("is_active", true).maybeSingle(),
+      ]);
 
       if (cancelled) return;
+
+      const ieltsSettings = ieltsSettingsObj?.data;
+      const ieltsPractice = ieltsPracticeObj?.data || [];
+      const dmatProgress = dmatProgressObj?.data || [];
+      const dmatSettings = dmatSettingsObj?.data;
+      const adminSchedule = adminScheduleObj?.data;
+
+      // Calculate IELTS progress roughly
+      let ieltsOverallPct = 0;
+      if (ieltsSettings?.target_overall && ieltsPractice.length > 0) {
+        const skills = ["listening", "reading", "writing", "speaking"];
+        let sumPct = 0;
+        skills.forEach((s) => {
+          const p = ieltsPractice.filter(
+            (x: Record<string, unknown>) => (x.skill as string)?.toLowerCase() === s,
+          );
+          const latestBand = p.length > 0 && p[0].band ? (p[0].band as number) : 0;
+          let target = ieltsSettings.target_overall;
+          if (s === "listening" && ieltsSettings.target_listening)
+            target = ieltsSettings.target_listening;
+          if (s === "reading" && ieltsSettings.target_reading)
+            target = ieltsSettings.target_reading;
+          if (s === "writing" && ieltsSettings.target_writing)
+            target = ieltsSettings.target_writing;
+          if (s === "speaking" && ieltsSettings.target_speaking)
+            target = ieltsSettings.target_speaking;
+
+          sumPct +=
+            latestBand > 0 && target != null ? Math.min((latestBand / target) * 100, 100) : 0;
+        });
+        ieltsOverallPct = Math.round(sumPct / 4);
+      }
+      let dmatOverallPct = 0;
+      if (dmatProgress.length > 0) {
+        const dmatTopics = [
+          "Figure Sequences",
+          "Latin Squares",
+          "Mathematical Equations",
+          "Subject Module",
+        ];
+        let sumPct = 0;
+        dmatTopics.forEach((t) => {
+          const p = dmatProgress.filter(
+            (x: Record<string, unknown>) => (x.topic as string)?.toLowerCase() === t.toLowerCase(),
+          );
+          const maxPct = p.reduce(
+            (acc: number, curr: Record<string, unknown>) =>
+              Math.max(acc, (curr.progress_pct as number) || 0),
+            0,
+          );
+          sumPct += Math.min(maxPct, 100);
+        });
+        dmatOverallPct = Math.round(sumPct / dmatTopics.length);
+      }
+
+      // Compute streak from checkins
+      let globalStreak = 0;
+      let longestStreak = 0;
+
+      console.log("STEP 3: checkins.data rows", checkins.data);
+
+      if (checkins.data && checkins.data.length > 0) {
+        // Since we order by checkin_date descending in the query
+        // we extract unique dates sorted descending
+        const normalizeDate = (dateStr: string) => {
+          if (!dateStr.includes("T") && !dateStr.includes(" ")) {
+            return dateStr.substring(0, 10);
+          }
+          return format(new Date(dateStr), "yyyy-MM-dd");
+        };
+
+        const sortedDates = [
+          ...new Set(
+            checkins.data.map((c: { checkin_date: string }) => normalizeDate(c.checkin_date)),
+          ),
+        ]
+          .sort()
+          .reverse();
+
+        console.log("STEP 4: sortedDates", sortedDates);
+
+        const parseLocal = (dStr: string) => {
+          const [y, m, d] = dStr.split("-").map(Number);
+          return new Date(y, m - 1, d);
+        };
+
+        let currentRun = 1;
+        let maxRun = 1;
+        for (let i = 1; i < sortedDates.length; i++) {
+          const expectedPrev = format(subDays(parseLocal(sortedDates[i - 1]), 1), "yyyy-MM-dd");
+          if (sortedDates[i] === expectedPrev) {
+            currentRun++;
+            maxRun = Math.max(maxRun, currentRun);
+          } else {
+            currentRun = 1;
+          }
+        }
+        longestStreak = maxRun;
+
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
+
+        if (sortedDates[0] === todayStr || sortedDates[0] === yesterdayStr) {
+          let current = parseLocal(sortedDates[0]);
+          globalStreak = 1;
+          for (let i = 1; i < sortedDates.length; i++) {
+            const expectedPrev = format(subDays(current, 1), "yyyy-MM-dd");
+
+            console.log("STEP 5:", {
+              currentDate: sortedDates[i],
+              expectedPrevious: expectedPrev,
+              actualPrevious: sortedDates[i],
+              loopIndex: i,
+            });
+
+            if (sortedDates[i] === expectedPrev) {
+              globalStreak++;
+              current = subDays(current, 1);
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      console.log("STEP 6: Calculated streak", globalStreak);
+
+      // Compute IELTS weekly hours (from all practice for now to match /ielts)
+      const ieltsWeeklyHours =
+        ieltsPractice.reduce(
+          (acc: number, curr: Record<string, unknown>) =>
+            acc + ((curr.duration_min as number) || 0),
+          0,
+        ) / 60;
+
+      // Compute dMAT weekly hours
+      const dmatWeeklyHours =
+        dmatProgress.reduce(
+          (acc: number, curr: Record<string, unknown>) => acc + ((curr.study_min as number) || 0),
+          0,
+        ) / 60;
+
+      // Compute dMAT current and next topics
+      let dmatCurrentTopic = null;
+      let dmatNextTopic = null;
+      if (dmatProgress.length > 0) {
+        const sorted = [...dmatProgress].sort(
+          (a: Record<string, unknown>, b: Record<string, unknown>) =>
+            new Date(b.updated_at as string).getTime() - new Date(a.updated_at as string).getTime(),
+        );
+        dmatCurrentTopic = (sorted[0].topic as string) || null;
+        const unstarted = [
+          "Figure Sequences",
+          "Latin Squares",
+          "Mathematical Equations",
+          "Subject Module",
+        ].find(
+          (t) =>
+            !dmatProgress.some(
+              (p: Record<string, unknown>) =>
+                (p.topic as string)?.toLowerCase() === t.toLowerCase(),
+            ),
+        );
+        dmatNextTopic = unstarted || null;
+      }
 
       const taskRows = (tasks.data ?? []) as TaskRow[];
       const overdue = taskRows.filter((t) => t.due_date && t.due_date < today);
@@ -264,6 +474,17 @@ export function useDashboardData(): DashboardData {
         insights,
         journeyCompletionPct,
         acceptanceTopBand,
+        ieltsTargetBand: ieltsSettings?.target_overall ?? null,
+        ieltsOverallPct,
+        dmatOverallPct,
+        ieltsExamDate: ieltsSettings?.exam_date_lrw ?? null,
+        dmatExamDate: dmatSettings?.user_exam_date || adminSchedule?.exam_date || null,
+        globalStreak,
+        longestStreak,
+        ieltsWeeklyHours,
+        dmatWeeklyHours,
+        dmatCurrentTopic,
+        dmatNextTopic,
       });
     }
 
@@ -284,6 +505,41 @@ export function useDashboardData(): DashboardData {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "documents", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "daily_checkins", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "daily_progress", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ielts_practice", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dmat_progress", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "targets", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ielts_settings", filter: `user_id=eq.${user.id}` },
+        load,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dmat_settings", filter: `user_id=eq.${user.id}` },
         load,
       )
       .subscribe();

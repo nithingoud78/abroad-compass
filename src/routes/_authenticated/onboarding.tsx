@@ -36,6 +36,9 @@ function OnboardingWizard() {
   // Step 1
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [originalUsername, setOriginalUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameChecking, setUsernameChecking] = useState(false);
   const [targetCountry, setTargetCountry] = useState("Germany");
   const [targetIntake, setTargetIntake] = useState("WS-2026");
   const [targetDegree, setTargetDegree] = useState("Master");
@@ -76,9 +79,50 @@ function OnboardingWizard() {
       .then(({ data }) => {
         if (data?.onboarding_completed) navigate({ to: "/dashboard" });
         if (data?.display_name) setDisplayName(data.display_name);
-        if (data?.username) setUsername(data.username);
+        if (data?.username) {
+          setUsername(data.username);
+          setOriginalUsername(data.username);
+        }
       });
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (!username || username === originalUsername) {
+      setUsernameError("");
+      return;
+    }
+
+    // validate format
+    if (username.length < 3 || username.length > 30) {
+      setUsernameError("Must be between 3 and 30 characters");
+      return;
+    }
+    if (!/^[a-z0-9._]+$/.test(username)) {
+      setUsernameError("Only lowercase letters, numbers, periods, and underscores allowed");
+      return;
+    }
+
+    const checkAvailability = async () => {
+      setUsernameChecking(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("username", username)
+        .maybeSingle();
+
+      setUsernameChecking(false);
+      if (error) {
+        setUsernameError("Error checking availability");
+      } else if (data && data.user_id !== user?.id) {
+        setUsernameError("Username is taken");
+      } else {
+        setUsernameError("");
+      }
+    };
+
+    const timer = setTimeout(checkAvailability, 500);
+    return () => clearTimeout(timer);
+  }, [username, originalUsername, user?.id]);
 
   async function finish() {
     if (!user) return;
@@ -206,9 +250,28 @@ function OnboardingWizard() {
             <Field label="Display name">
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </Field>
-            <Field label="Username">
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} />
-            </Field>
+            <div className="space-y-1.5">
+              <Label>Username</Label>
+              <Input
+                placeholder="e.g. johndoe"
+                value={username}
+                onChange={(e) =>
+                  setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))
+                }
+                className={usernameError ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {usernameChecking && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Checking...
+                </p>
+              )}
+              {usernameError && !usernameChecking && (
+                <p className="text-xs text-red-500">{usernameError}</p>
+              )}
+              {!usernameError && !usernameChecking && username && username !== originalUsername && (
+                <p className="text-xs text-green-500">Username available</p>
+              )}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Target country">
                 <Select value={targetCountry} onValueChange={setTargetCountry}>
@@ -531,7 +594,10 @@ function OnboardingWizard() {
             Back
           </Button>
           {step < steps.length - 1 ? (
-            <Button onClick={() => setStep((s) => s + 1)}>
+            <Button
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!!usernameError || usernameChecking}
+            >
               Next
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

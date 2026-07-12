@@ -571,6 +571,327 @@ export type Database = {
         };
         Relationships: [];
       };
+      legal_pages: {
+        Row: {
+          slug: string;
+          title: string;
+          content_md: string;
+          updated_at: string;
+        };
+        Insert: {
+          slug: string;
+          title: string;
+          content_md: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          title?: string;
+          content_md?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      study_buddies: {
+        Row: {
+          id: string;
+          user_id_1: string;
+          user_id_2: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id_1: string;
+          user_id_2: string;
+          status: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id_1?: string;
+          user_id_2?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "study_buddies_user_id_1_fkey";
+            columns: ["user_id_1"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "study_buddies_user_id_2_fkey";
+            columns: ["user_id_2"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
+      targets: {
+        Row: {
+          id: string;
+          user_id: string;
+          german_level: string | null;
+          german_date: string | null;
+          budget_savings: number | null;
+          budget_blocked_account: number | null;
+          budget_monthly: number | null;
+          uni_dream: string | null;
+          uni_intake_season: string | null;
+          uni_intake_year: string | null;
+          uni_app_count: number | null;
+          uni_acc_count: number | null;
+          timeline_passport_date: string | null;
+          timeline_aps_date: string | null;
+          timeline_visa_date: string | null;
+          timeline_accommodation_date: string | null;
+          timeline_flight_date: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          german_level?: string | null;
+          german_date?: string | null;
+          budget_savings?: number | null;
+          budget_blocked_account?: number | null;
+          budget_monthly?: number | null;
+          uni_dream?: string | null;
+          uni_intake_season?: string | null;
+          uni_intake_year?: string | null;
+          uni_app_count?: number | null;
+          uni_acc_count?: number | null;
+          timeline_passport_date?: string | null;
+          timeline_aps_date?: string | null;
+          timeline_visa_date?: string | null;
+          timeline_accommodation_date?: string | null;
+          timeline_flight_date?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          german_level?: string | null;
+          german_date?: string | null;
+          budget_savings?: number | null;
+          budget_blocked_account?: number | null;
+          budget_monthly?: number | null;
+          uni_dream?: string | null;
+          uni_intake_season?: string | null;
+          uni_intake_year?: string | null;
+          uni_app_count?: number | null;
+          uni_acc_count?: number | null;
+          timeline_passport_date?: string | null;
+          timeline_aps_date?: string | null;
+          timeline_visa_date?: string | null;
+          timeline_accommodation_date?: string | null;
+          timeline_flight_date?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      dmat_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          target_score: number | null;
+          user_exam_date: string | null;
+          user_exam_session: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_score?: number | null;
+          user_exam_date?: string | null;
+          user_exam_session?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target_score?: number | null;
+          user_exam_date?: string | null;
+          user_exam_session?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      admin_exam_schedule: {
+        Row: {
+          id: string;
+          registration_opens: string | null;
+          registration_closes: string | null;
+          exam_date: string | null;
+          result_date: string | null;
+          exam_fee: number | null;
+          is_active: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          registration_opens?: string | null;
+          registration_closes?: string | null;
+          exam_date?: string | null;
+          result_date?: string | null;
+          exam_fee?: number | null;
+          is_active?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          registration_opens?: string | null;
+          registration_closes?: string | null;
+          exam_date?: string | null;
+          result_date?: string | null;
+          exam_fee?: number | null;
+          is_active?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      goethe_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          target_level: string | null;
+          exam_date: string | null;
+          weekly_goal_hours: number | null;
+          target_readiness: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_level?: string | null;
+          exam_date?: string | null;
+          weekly_goal_hours?: number | null;
+          target_readiness?: number | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target_level?: string | null;
+          exam_date?: string | null;
+          weekly_goal_hours?: number | null;
+          target_readiness?: number | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      ielts_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          target_overall: number | null;
+          target_listening: number | null;
+          target_reading: number | null;
+          target_writing: number | null;
+          target_speaking: number | null;
+          exam_date_lrw: string | null;
+          exam_date_speaking: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_overall?: number | null;
+          target_listening?: number | null;
+          target_reading?: number | null;
+          target_writing?: number | null;
+          target_speaking?: number | null;
+          exam_date_lrw?: string | null;
+          exam_date_speaking?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target_overall?: number | null;
+          target_listening?: number | null;
+          target_reading?: number | null;
+          target_writing?: number | null;
+          target_speaking?: number | null;
+          exam_date_lrw?: string | null;
+          exam_date_speaking?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      daily_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          checkin_date: string;
+          german_minutes: number | null;
+          german_vocab: number | null;
+          german_lesson_completed: boolean | null;
+          ielts_listening_hours: number | null;
+          ielts_reading_hours: number | null;
+          ielts_writing_hours: number | null;
+          ielts_speaking_hours: number | null;
+          testas_topic: string | null;
+          testas_hours: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          checkin_date: string;
+          german_minutes?: number | null;
+          german_vocab?: number | null;
+          german_lesson_completed?: boolean | null;
+          ielts_listening_hours?: number | null;
+          ielts_reading_hours?: number | null;
+          ielts_writing_hours?: number | null;
+          ielts_speaking_hours?: number | null;
+          testas_topic?: string | null;
+          testas_hours?: number | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          checkin_date?: string;
+          german_minutes?: number | null;
+          german_vocab?: number | null;
+          german_lesson_completed?: boolean | null;
+          ielts_listening_hours?: number | null;
+          ielts_reading_hours?: number | null;
+          ielts_writing_hours?: number | null;
+          ielts_speaking_hours?: number | null;
+          testas_topic?: string | null;
+          testas_hours?: number | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
       calendar_tokens: {
         Row: {
           created_at: string;
@@ -2270,6 +2591,24 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_admin_analytics: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          totalUsers: number;
+          dau: number;
+          wau: number;
+          mau: number;
+          aiRequests: number;
+          ocrRequests: number;
+          germanChecks: number;
+          ieltsSessions: number;
+          dmatSessions: number;
+          uniSearches: number;
+          feedbackCount: number;
+          blogPublished: number;
+          notificationsSent: number;
+        };
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -2295,7 +2634,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: "admin" | "moderator" | "user";
+      app_role: "admin" | "user" | "super_admin";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -2417,7 +2756,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "user", "super_admin"],
     },
   },
 } as const;

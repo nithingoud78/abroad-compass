@@ -77,26 +77,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Abroad Compass — Your Germany Study-Abroad OS" },
+      { name: "robots", content: "index, follow" },
+      { title: "Abroad Compass — Your Complete Germany Study Abroad Platform" },
       {
         name: "description",
         content:
-          "Plan your German master's application end-to-end: university shortlisting, German learning, budget, documents, AI mentor.",
+          "Plan your Germany study abroad journey with university search, APS roadmap, German learning, IELTS, budgeting, visa tracking and more.",
       },
-      { name: "theme-color", content: "#0b0b0f" },
-      { property: "og:title", content: "Abroad Compass — Your Germany Study-Abroad OS" },
+      { name: "theme-color", content: "#d97706" },
+      { property: "og:type", content: "website" },
+      {
+        property: "og:title",
+        content: "Abroad Compass — Your Complete Germany Study Abroad Platform",
+      },
       {
         property: "og:description",
         content:
-          "Plan your German master's application end-to-end with an AI mentor, budget planner, and university shortlist.",
+          "Everything you need to plan, learn and succeed in Germany. University search, German learning, APS, IELTS, budgeting and more.",
       },
-      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://abroadcompass.com/og-image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { property: "og:site_name", content: "Abroad Compass" },
+      { property: "og:url", content: "https://abroadcompass.com/" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Abroad Compass" },
-      { name: "twitter:description", content: "Your Germany study-abroad operating system." },
+      {
+        name: "twitter:title",
+        content: "Abroad Compass — Your Complete Germany Study Abroad Platform",
+      },
+      {
+        name: "twitter:description",
+        content: "Everything students need for Germany in one place.",
+      },
+      { name: "twitter:image", content: "https://abroadcompass.com/og-image.png" },
     ],
     links: [
+      { rel: "canonical", href: "https://abroadcompass.com/" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -105,7 +121,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "apple-touch-icon", href: "/favicon.svg" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Abroad Compass",
+          url: "https://abroadcompass.com",
+          logo: "https://abroadcompass.com/favicon.svg",
+          sameAs: [
+            "https://twitter.com/abroadcompass",
+            "https://github.com/abroadcompass",
+            "https://linkedin.com/company/abroadcompass",
+          ],
+        }),
+      },
     ],
   }),
 
@@ -120,6 +154,20 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('abroad-compass-theme') || 'light';
+                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body>
         {children}

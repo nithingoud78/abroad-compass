@@ -11,34 +11,58 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as HelpCenterRouteImport } from './routes/help-center'
+import { Route as GuidesRouteImport } from './routes/guides'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as ComingSoonRouteImport } from './routes/coming-soon'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedVocabularyRouteImport } from './routes/_authenticated/vocabulary'
 import { Route as AuthenticatedUniversityRouteImport } from './routes/_authenticated/university'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedIeltsRouteImport } from './routes/_authenticated/ielts'
+import { Route as AuthenticatedGoetheRouteImport } from './routes/_authenticated/goethe'
+import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedGermanyJourneyRouteImport } from './routes/_authenticated/germany-journey'
 import { Route as AuthenticatedGermanRouteImport } from './routes/_authenticated/german'
+import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedFeedbackRouteImport } from './routes/_authenticated/feedback'
+import { Route as AuthenticatedDmatRouteImport } from './routes/_authenticated/dmat'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCheckInRouteImport } from './routes/_authenticated/check-in'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBudgetRouteImport } from './routes/_authenticated/budget'
 import { Route as AuthenticatedBlogRouteImport } from './routes/_authenticated/blog'
-import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings.security'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
-import { Route as AuthenticatedSettingsAiRouteImport } from './routes/_authenticated/settings.ai'
-import { Route as AuthenticatedAssistantReviewRouteImport } from './routes/_authenticated/assistant.review'
+import { Route as AuthenticatedProfileUsernameRouteImport } from './routes/_authenticated/profile.$username'
+import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminTestasRouteImport } from './routes/_authenticated/admin.testas'
+import { Route as AuthenticatedAdminSystemRouteImport } from './routes/_authenticated/admin.system'
+import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as AuthenticatedAdminProfileRouteImport } from './routes/_authenticated/admin.profile'
+import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
+import { Route as AuthenticatedAdminLegalRouteImport } from './routes/_authenticated/admin.legal'
+import { Route as AuthenticatedAdminFooterRouteImport } from './routes/_authenticated/admin.footer'
+import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin.dashboard'
+import { Route as AuthenticatedAdminBlogRouteImport } from './routes/_authenticated/admin.blog'
+import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
+import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin.ai'
+import { Route as AuthenticatedAdminAdminsRouteImport } from './routes/_authenticated/admin.admins'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -48,6 +72,31 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpCenterRoute = HelpCenterRouteImport.update({
+  id: '/help-center',
+  path: '/help-center',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesRoute = GuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComingSoonRoute = ComingSoonRouteImport.update({
+  id: '/coming-soon',
+  path: '/coming-soon',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -62,6 +111,16 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalSlugRoute = LegalSlugRouteImport.update({
+  id: '/legal/$slug',
+  path: '/legal/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedVocabularyRoute = AuthenticatedVocabularyRouteImport.update({
@@ -79,9 +138,9 @@ const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
@@ -92,6 +151,21 @@ const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIeltsRoute = AuthenticatedIeltsRouteImport.update({
+  id: '/ielts',
+  path: '/ielts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGoetheRoute = AuthenticatedGoetheRouteImport.update({
+  id: '/goethe',
+  path: '/goethe',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGermanyJourneyRoute =
@@ -105,9 +179,19 @@ const AuthenticatedGermanRoute = AuthenticatedGermanRouteImport.update({
   path: '/german',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFeedbackRoute = AuthenticatedFeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDmatRoute = AuthenticatedDmatRouteImport.update({
+  id: '/dmat',
+  path: '/dmat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -135,11 +219,6 @@ const AuthenticatedBlogRoute = AuthenticatedBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
-  id: '/assistant',
-  path: '/assistant',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -150,248 +229,474 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsIndexRoute =
+  AuthenticatedNotificationsIndexRouteImport.update({
+    id: '/notifications/',
+    path: '/notifications/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const ApiAiChatRoute = ApiAiChatRouteImport.update({
-  id: '/api/ai/chat',
-  path: '/api/ai/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedSettingsSecurityRoute =
   AuthenticatedSettingsSecurityRouteImport.update({
-    id: '/security',
-    path: '/security',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+    id: '/settings/security',
+    path: '/settings/security',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSettingsNotificationsRoute =
-  AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+const AuthenticatedProfileUsernameRoute =
+  AuthenticatedProfileUsernameRouteImport.update({
+    id: '/profile/$username',
+    path: '/profile/$username',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSettingsAiRoute = AuthenticatedSettingsAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => AuthenticatedSettingsRoute,
-} as any)
-const AuthenticatedAssistantReviewRoute =
-  AuthenticatedAssistantReviewRouteImport.update({
-    id: '/review',
-    path: '/review',
-    getParentRoute: () => AuthenticatedAssistantRoute,
+const AuthenticatedNotificationsSettingsRoute =
+  AuthenticatedNotificationsSettingsRouteImport.update({
+    id: '/notifications/settings',
+    path: '/notifications/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminTestasRoute =
+  AuthenticatedAdminTestasRouteImport.update({
+    id: '/testas',
+    path: '/testas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSystemRoute =
+  AuthenticatedAdminSystemRouteImport.update({
+    id: '/system',
+    path: '/system',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportRoute =
+  AuthenticatedAdminSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminProfileRoute =
+  AuthenticatedAdminProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminLegalRoute = AuthenticatedAdminLegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminFooterRoute =
+  AuthenticatedAdminFooterRouteImport.update({
+    id: '/footer',
+    path: '/footer',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFeedbackRoute =
+  AuthenticatedAdminFeedbackRouteImport.update({
+    id: '/feedback',
+    path: '/feedback',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminDashboardRoute =
   AuthenticatedAdminDashboardRouteImport.update({
     id: '/dashboard',
     path: '/dashboard',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBlogRoute = AuthenticatedAdminBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminAnalyticsRoute =
+  AuthenticatedAdminAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminAiRoute = AuthenticatedAdminAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminAdminsRoute =
+  AuthenticatedAdminAdminsRouteImport.update({
+    id: '/admins',
+    path: '/admins',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/coming-soon': typeof ComingSoonRoute
+  '/community': typeof CommunityRoute
+  '/guides': typeof GuidesRoute
+  '/help-center': typeof HelpCenterRoute
+  '/maintenance': typeof MaintenanceRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/assistant': typeof AuthenticatedAssistantRouteWithChildren
   '/blog': typeof AuthenticatedBlogRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/check-in': typeof AuthenticatedCheckInRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dmat': typeof AuthenticatedDmatRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
+  '/friends': typeof AuthenticatedFriendsRoute
   '/german': typeof AuthenticatedGermanRoute
   '/germany-journey': typeof AuthenticatedGermanyJourneyRoute
+  '/goals': typeof AuthenticatedGoalsRoute
+  '/goethe': typeof AuthenticatedGoetheRoute
+  '/ielts': typeof AuthenticatedIeltsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/support': typeof AuthenticatedSupportRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/university': typeof AuthenticatedUniversityRoute
   '/vocabulary': typeof AuthenticatedVocabularyRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/admin/admins': typeof AuthenticatedAdminAdminsRoute
+  '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/admin/blog': typeof AuthenticatedAdminBlogRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
+  '/admin/footer': typeof AuthenticatedAdminFooterRoute
+  '/admin/legal': typeof AuthenticatedAdminLegalRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/system': typeof AuthenticatedAdminSystemRoute
+  '/admin/testas': typeof AuthenticatedAdminTestasRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/assistant/review': typeof AuthenticatedAssistantReviewRoute
-  '/settings/ai': typeof AuthenticatedSettingsAiRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/profile/$username': typeof AuthenticatedProfileUsernameRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/api/ai/chat': typeof ApiAiChatRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/coming-soon': typeof ComingSoonRoute
+  '/community': typeof CommunityRoute
+  '/guides': typeof GuidesRoute
+  '/help-center': typeof HelpCenterRoute
+  '/maintenance': typeof MaintenanceRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/assistant': typeof AuthenticatedAssistantRouteWithChildren
   '/blog': typeof AuthenticatedBlogRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/check-in': typeof AuthenticatedCheckInRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dmat': typeof AuthenticatedDmatRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
+  '/friends': typeof AuthenticatedFriendsRoute
   '/german': typeof AuthenticatedGermanRoute
   '/germany-journey': typeof AuthenticatedGermanyJourneyRoute
+  '/goals': typeof AuthenticatedGoalsRoute
+  '/goethe': typeof AuthenticatedGoetheRoute
+  '/ielts': typeof AuthenticatedIeltsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/support': typeof AuthenticatedSupportRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/university': typeof AuthenticatedUniversityRoute
   '/vocabulary': typeof AuthenticatedVocabularyRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/admin/admins': typeof AuthenticatedAdminAdminsRoute
+  '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/admin/blog': typeof AuthenticatedAdminBlogRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
+  '/admin/footer': typeof AuthenticatedAdminFooterRoute
+  '/admin/legal': typeof AuthenticatedAdminLegalRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/system': typeof AuthenticatedAdminSystemRoute
+  '/admin/testas': typeof AuthenticatedAdminTestasRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/assistant/review': typeof AuthenticatedAssistantReviewRoute
-  '/settings/ai': typeof AuthenticatedSettingsAiRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/profile/$username': typeof AuthenticatedProfileUsernameRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/api/ai/chat': typeof ApiAiChatRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/notifications': typeof AuthenticatedNotificationsIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/coming-soon': typeof ComingSoonRoute
+  '/community': typeof CommunityRoute
+  '/guides': typeof GuidesRoute
+  '/help-center': typeof HelpCenterRoute
+  '/maintenance': typeof MaintenanceRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
-  '/_authenticated/assistant': typeof AuthenticatedAssistantRouteWithChildren
   '/_authenticated/blog': typeof AuthenticatedBlogRoute
   '/_authenticated/budget': typeof AuthenticatedBudgetRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/check-in': typeof AuthenticatedCheckInRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dmat': typeof AuthenticatedDmatRoute
   '/_authenticated/feedback': typeof AuthenticatedFeedbackRoute
+  '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/german': typeof AuthenticatedGermanRoute
   '/_authenticated/germany-journey': typeof AuthenticatedGermanyJourneyRoute
+  '/_authenticated/goals': typeof AuthenticatedGoalsRoute
+  '/_authenticated/goethe': typeof AuthenticatedGoetheRoute
+  '/_authenticated/ielts': typeof AuthenticatedIeltsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/university': typeof AuthenticatedUniversityRoute
   '/_authenticated/vocabulary': typeof AuthenticatedVocabularyRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/_authenticated/admin/admins': typeof AuthenticatedAdminAdminsRoute
+  '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/_authenticated/admin/blog': typeof AuthenticatedAdminBlogRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
+  '/_authenticated/admin/footer': typeof AuthenticatedAdminFooterRoute
+  '/_authenticated/admin/legal': typeof AuthenticatedAdminLegalRoute
+  '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/_authenticated/admin/system': typeof AuthenticatedAdminSystemRoute
+  '/_authenticated/admin/testas': typeof AuthenticatedAdminTestasRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/_authenticated/assistant/review': typeof AuthenticatedAssistantReviewRoute
-  '/_authenticated/settings/ai': typeof AuthenticatedSettingsAiRoute
-  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/_authenticated/profile/$username': typeof AuthenticatedProfileUsernameRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/api/ai/chat': typeof ApiAiChatRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/coming-soon'
+    | '/community'
+    | '/guides'
+    | '/help-center'
+    | '/maintenance'
     | '/reset-password'
     | '/sitemap.xml'
     | '/admin'
     | '/analytics'
-    | '/assistant'
     | '/blog'
     | '/budget'
     | '/calendar'
     | '/check-in'
     | '/dashboard'
+    | '/dmat'
     | '/feedback'
+    | '/friends'
     | '/german'
     | '/germany-journey'
+    | '/goals'
+    | '/goethe'
+    | '/ielts'
     | '/onboarding'
     | '/portfolio'
-    | '/settings'
+    | '/support'
     | '/tools'
     | '/university'
     | '/vocabulary'
+    | '/admin/login'
+    | '/legal/$slug'
+    | '/admin/admins'
+    | '/admin/ai'
+    | '/admin/analytics'
+    | '/admin/blog'
     | '/admin/dashboard'
+    | '/admin/feedback'
+    | '/admin/footer'
+    | '/admin/legal'
+    | '/admin/logs'
+    | '/admin/profile'
+    | '/admin/settings'
+    | '/admin/support'
+    | '/admin/system'
+    | '/admin/testas'
     | '/admin/users'
-    | '/assistant/review'
-    | '/settings/ai'
-    | '/settings/notifications'
+    | '/notifications/settings'
+    | '/profile/$username'
     | '/settings/security'
-    | '/api/ai/chat'
     | '/admin/'
+    | '/notifications/'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/coming-soon'
+    | '/community'
+    | '/guides'
+    | '/help-center'
+    | '/maintenance'
     | '/reset-password'
     | '/sitemap.xml'
     | '/analytics'
-    | '/assistant'
     | '/blog'
     | '/budget'
     | '/calendar'
     | '/check-in'
     | '/dashboard'
+    | '/dmat'
     | '/feedback'
+    | '/friends'
     | '/german'
     | '/germany-journey'
+    | '/goals'
+    | '/goethe'
+    | '/ielts'
     | '/onboarding'
     | '/portfolio'
-    | '/settings'
+    | '/support'
     | '/tools'
     | '/university'
     | '/vocabulary'
+    | '/admin/login'
+    | '/legal/$slug'
+    | '/admin/admins'
+    | '/admin/ai'
+    | '/admin/analytics'
+    | '/admin/blog'
     | '/admin/dashboard'
+    | '/admin/feedback'
+    | '/admin/footer'
+    | '/admin/legal'
+    | '/admin/logs'
+    | '/admin/profile'
+    | '/admin/settings'
+    | '/admin/support'
+    | '/admin/system'
+    | '/admin/testas'
     | '/admin/users'
-    | '/assistant/review'
-    | '/settings/ai'
-    | '/settings/notifications'
+    | '/notifications/settings'
+    | '/profile/$username'
     | '/settings/security'
-    | '/api/ai/chat'
     | '/admin'
+    | '/notifications'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/coming-soon'
+    | '/community'
+    | '/guides'
+    | '/help-center'
+    | '/maintenance'
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/analytics'
-    | '/_authenticated/assistant'
     | '/_authenticated/blog'
     | '/_authenticated/budget'
     | '/_authenticated/calendar'
     | '/_authenticated/check-in'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dmat'
     | '/_authenticated/feedback'
+    | '/_authenticated/friends'
     | '/_authenticated/german'
     | '/_authenticated/germany-journey'
+    | '/_authenticated/goals'
+    | '/_authenticated/goethe'
+    | '/_authenticated/ielts'
     | '/_authenticated/onboarding'
     | '/_authenticated/portfolio'
-    | '/_authenticated/settings'
+    | '/_authenticated/support'
     | '/_authenticated/tools'
     | '/_authenticated/university'
     | '/_authenticated/vocabulary'
+    | '/admin/login'
+    | '/legal/$slug'
+    | '/_authenticated/admin/admins'
+    | '/_authenticated/admin/ai'
+    | '/_authenticated/admin/analytics'
+    | '/_authenticated/admin/blog'
     | '/_authenticated/admin/dashboard'
+    | '/_authenticated/admin/feedback'
+    | '/_authenticated/admin/footer'
+    | '/_authenticated/admin/legal'
+    | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/profile'
+    | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/support'
+    | '/_authenticated/admin/system'
+    | '/_authenticated/admin/testas'
     | '/_authenticated/admin/users'
-    | '/_authenticated/assistant/review'
-    | '/_authenticated/settings/ai'
-    | '/_authenticated/settings/notifications'
+    | '/_authenticated/notifications/settings'
+    | '/_authenticated/profile/$username'
     | '/_authenticated/settings/security'
-    | '/api/ai/chat'
     | '/_authenticated/admin/'
+    | '/_authenticated/notifications/'
+    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ComingSoonRoute: typeof ComingSoonRoute
+  CommunityRoute: typeof CommunityRoute
+  GuidesRoute: typeof GuidesRoute
+  HelpCenterRoute: typeof HelpCenterRoute
+  MaintenanceRoute: typeof MaintenanceRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ApiAiChatRoute: typeof ApiAiChatRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  LegalSlugRoute: typeof LegalSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -408,6 +713,41 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help-center': {
+      id: '/help-center'
+      path: '/help-center'
+      fullPath: '/help-center'
+      preLoaderRoute: typeof HelpCenterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides': {
+      id: '/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof GuidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coming-soon': {
+      id: '/coming-soon'
+      path: '/coming-soon'
+      fullPath: '/coming-soon'
+      preLoaderRoute: typeof ComingSoonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -431,6 +771,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/$slug': {
+      id: '/legal/$slug'
+      path: '/legal/$slug'
+      fullPath: '/legal/$slug'
+      preLoaderRoute: typeof LegalSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/vocabulary': {
       id: '/_authenticated/vocabulary'
       path: '/vocabulary'
@@ -452,11 +806,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedToolsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/portfolio': {
@@ -473,6 +827,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ielts': {
+      id: '/_authenticated/ielts'
+      path: '/ielts'
+      fullPath: '/ielts'
+      preLoaderRoute: typeof AuthenticatedIeltsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/goethe': {
+      id: '/_authenticated/goethe'
+      path: '/goethe'
+      fullPath: '/goethe'
+      preLoaderRoute: typeof AuthenticatedGoetheRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/goals': {
+      id: '/_authenticated/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AuthenticatedGoalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/germany-journey': {
       id: '/_authenticated/germany-journey'
       path: '/germany-journey'
@@ -487,11 +862,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGermanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/friends': {
+      id: '/_authenticated/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/feedback': {
       id: '/_authenticated/feedback'
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof AuthenticatedFeedbackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dmat': {
+      id: '/_authenticated/dmat'
+      path: '/dmat'
+      fullPath: '/dmat'
+      preLoaderRoute: typeof AuthenticatedDmatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -529,13 +918,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBlogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/assistant': {
-      id: '/_authenticated/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AuthenticatedAssistantRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/analytics': {
       id: '/_authenticated/analytics'
       path: '/analytics'
@@ -550,6 +932,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications/': {
+      id: '/_authenticated/notifications/'
+      path: '/notifications'
+      fullPath: '/notifications/'
+      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -557,46 +953,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/ai/chat': {
-      id: '/api/ai/chat'
-      path: '/api/ai/chat'
-      fullPath: '/api/ai/chat'
-      preLoaderRoute: typeof ApiAiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/settings/security': {
       id: '/_authenticated/settings/security'
-      path: '/security'
+      path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof AuthenticatedSettingsSecurityRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+    '/_authenticated/profile/$username': {
+      id: '/_authenticated/profile/$username'
+      path: '/profile/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof AuthenticatedProfileUsernameRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/ai': {
-      id: '/_authenticated/settings/ai'
-      path: '/ai'
-      fullPath: '/settings/ai'
-      preLoaderRoute: typeof AuthenticatedSettingsAiRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/assistant/review': {
-      id: '/_authenticated/assistant/review'
-      path: '/review'
-      fullPath: '/assistant/review'
-      preLoaderRoute: typeof AuthenticatedAssistantReviewRouteImport
-      parentRoute: typeof AuthenticatedAssistantRoute
+    '/_authenticated/notifications/settings': {
+      id: '/_authenticated/notifications/settings'
+      path: '/notifications/settings'
+      fullPath: '/notifications/settings'
+      preLoaderRoute: typeof AuthenticatedNotificationsSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/testas': {
+      id: '/_authenticated/admin/testas'
+      path: '/testas'
+      fullPath: '/admin/testas'
+      preLoaderRoute: typeof AuthenticatedAdminTestasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/system': {
+      id: '/_authenticated/admin/system'
+      path: '/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AuthenticatedAdminSystemRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/support': {
+      id: '/_authenticated/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AuthenticatedAdminSupportRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/profile': {
+      id: '/_authenticated/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AuthenticatedAdminProfileRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/logs': {
+      id: '/_authenticated/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/legal': {
+      id: '/_authenticated/admin/legal'
+      path: '/legal'
+      fullPath: '/admin/legal'
+      preLoaderRoute: typeof AuthenticatedAdminLegalRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/footer': {
+      id: '/_authenticated/admin/footer'
+      path: '/footer'
+      fullPath: '/admin/footer'
+      preLoaderRoute: typeof AuthenticatedAdminFooterRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/feedback': {
+      id: '/_authenticated/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AuthenticatedAdminFeedbackRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/dashboard': {
@@ -606,17 +1051,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDashboardRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/blog': {
+      id: '/_authenticated/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AuthenticatedAdminBlogRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/analytics': {
+      id: '/_authenticated/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AuthenticatedAdminAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/ai': {
+      id: '/_authenticated/admin/ai'
+      path: '/ai'
+      fullPath: '/admin/ai'
+      preLoaderRoute: typeof AuthenticatedAdminAiRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/admins': {
+      id: '/_authenticated/admin/admins'
+      path: '/admins'
+      fullPath: '/admin/admins'
+      preLoaderRoute: typeof AuthenticatedAdminAdminsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAdminsRoute: typeof AuthenticatedAdminAdminsRoute
+  AuthenticatedAdminAiRoute: typeof AuthenticatedAdminAiRoute
+  AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
+  AuthenticatedAdminBlogRoute: typeof AuthenticatedAdminBlogRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
+  AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
+  AuthenticatedAdminFooterRoute: typeof AuthenticatedAdminFooterRoute
+  AuthenticatedAdminLegalRoute: typeof AuthenticatedAdminLegalRoute
+  AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminProfileRoute: typeof AuthenticatedAdminProfileRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
+  AuthenticatedAdminSystemRoute: typeof AuthenticatedAdminSystemRoute
+  AuthenticatedAdminTestasRoute: typeof AuthenticatedAdminTestasRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAdminsRoute: AuthenticatedAdminAdminsRoute,
+  AuthenticatedAdminAiRoute: AuthenticatedAdminAiRoute,
+  AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
+  AuthenticatedAdminBlogRoute: AuthenticatedAdminBlogRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
+  AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
+  AuthenticatedAdminFooterRoute: AuthenticatedAdminFooterRoute,
+  AuthenticatedAdminLegalRoute: AuthenticatedAdminLegalRoute,
+  AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminProfileRoute: AuthenticatedAdminProfileRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
+  AuthenticatedAdminSystemRoute: AuthenticatedAdminSystemRoute,
+  AuthenticatedAdminTestasRoute: AuthenticatedAdminTestasRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -624,76 +1123,63 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
-interface AuthenticatedAssistantRouteChildren {
-  AuthenticatedAssistantReviewRoute: typeof AuthenticatedAssistantReviewRoute
-}
-
-const AuthenticatedAssistantRouteChildren: AuthenticatedAssistantRouteChildren =
-  {
-    AuthenticatedAssistantReviewRoute: AuthenticatedAssistantReviewRoute,
-  }
-
-const AuthenticatedAssistantRouteWithChildren =
-  AuthenticatedAssistantRoute._addFileChildren(
-    AuthenticatedAssistantRouteChildren,
-  )
-
-interface AuthenticatedSettingsRouteChildren {
-  AuthenticatedSettingsAiRoute: typeof AuthenticatedSettingsAiRoute
-  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
-  AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
-}
-
-const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
-  AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
-  AuthenticatedSettingsNotificationsRoute:
-    AuthenticatedSettingsNotificationsRoute,
-  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
-}
-
-const AuthenticatedSettingsRouteWithChildren =
-  AuthenticatedSettingsRoute._addFileChildren(
-    AuthenticatedSettingsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
-  AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRouteWithChildren
   AuthenticatedBlogRoute: typeof AuthenticatedBlogRoute
   AuthenticatedBudgetRoute: typeof AuthenticatedBudgetRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCheckInRoute: typeof AuthenticatedCheckInRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDmatRoute: typeof AuthenticatedDmatRoute
   AuthenticatedFeedbackRoute: typeof AuthenticatedFeedbackRoute
+  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedGermanRoute: typeof AuthenticatedGermanRoute
   AuthenticatedGermanyJourneyRoute: typeof AuthenticatedGermanyJourneyRoute
+  AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
+  AuthenticatedGoetheRoute: typeof AuthenticatedGoetheRoute
+  AuthenticatedIeltsRoute: typeof AuthenticatedIeltsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedUniversityRoute: typeof AuthenticatedUniversityRoute
   AuthenticatedVocabularyRoute: typeof AuthenticatedVocabularyRoute
+  AuthenticatedNotificationsSettingsRoute: typeof AuthenticatedNotificationsSettingsRoute
+  AuthenticatedProfileUsernameRoute: typeof AuthenticatedProfileUsernameRoute
+  AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
+  AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
-  AuthenticatedAssistantRoute: AuthenticatedAssistantRouteWithChildren,
   AuthenticatedBlogRoute: AuthenticatedBlogRoute,
   AuthenticatedBudgetRoute: AuthenticatedBudgetRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCheckInRoute: AuthenticatedCheckInRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDmatRoute: AuthenticatedDmatRoute,
   AuthenticatedFeedbackRoute: AuthenticatedFeedbackRoute,
+  AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedGermanRoute: AuthenticatedGermanRoute,
   AuthenticatedGermanyJourneyRoute: AuthenticatedGermanyJourneyRoute,
+  AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
+  AuthenticatedGoetheRoute: AuthenticatedGoetheRoute,
+  AuthenticatedIeltsRoute: AuthenticatedIeltsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedUniversityRoute: AuthenticatedUniversityRoute,
   AuthenticatedVocabularyRoute: AuthenticatedVocabularyRoute,
+  AuthenticatedNotificationsSettingsRoute:
+    AuthenticatedNotificationsSettingsRoute,
+  AuthenticatedProfileUsernameRoute: AuthenticatedProfileUsernameRoute,
+  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
+  AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -703,9 +1189,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ComingSoonRoute: ComingSoonRoute,
+  CommunityRoute: CommunityRoute,
+  GuidesRoute: GuidesRoute,
+  HelpCenterRoute: HelpCenterRoute,
+  MaintenanceRoute: MaintenanceRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ApiAiChatRoute: ApiAiChatRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  LegalSlugRoute: LegalSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

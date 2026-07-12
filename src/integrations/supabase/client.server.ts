@@ -43,7 +43,7 @@ function createSupabaseAdminClient() {
     ];
     const message = `Missing Supabase environment variable(s): ${missing.join(", ")}.`;
     console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+    throw new Error("Server configuration error. Admin features are disabled.");
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

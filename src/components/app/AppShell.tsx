@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AppSidebar } from "@/components/app/AppSidebar";
+import { Footer } from "@/components/app/Footer";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
 import { DailyCheckinModal } from "@/components/app/DailyCheckinModal";
@@ -179,6 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <Footer />
           {profileChecked && pathname !== "/onboarding" && <DailyCheckinModal />}
         </SidebarInset>
         <CommandPalette open={cmdkOpen} onOpenChange={setCmdkOpen} />
