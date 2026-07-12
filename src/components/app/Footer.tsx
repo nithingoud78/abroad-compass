@@ -46,7 +46,7 @@ export function Footer() {
         </div>
 
         {/* Right: Legal Links & Socials */}
-        <div className="flex items-center gap-6 ml-auto">
+        <div className="flex items-center gap-6 ml-auto min-w-0">
           <nav className="hidden md:flex items-center gap-4 font-medium text-muted-foreground overflow-hidden">
             {links.length > 0 ? (
               links.map((l) => (
