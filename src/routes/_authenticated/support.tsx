@@ -49,7 +49,7 @@ function SupportPage() {
 
       // Fetch the QR code image from the public-assets bucket.
       const { data } = supabase.storage.from("public-assets").getPublicUrl("support-qr.png");
-      setQrUrl(data.publicUrl);
+      setQrUrl(`${data.publicUrl}?t=${Date.now()}`);
 
       setLoading(false);
     }
