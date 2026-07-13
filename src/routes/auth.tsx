@@ -75,7 +75,7 @@ function AuthPage() {
         },
       });
       if (error) throw error;
-      toast.success("Account created. Check your inbox to verify.");
+      toast.success("Account created! Please verify your email. Check your Inbox or Spam folder.");
       // If session is created (auto-confirm), redirect to onboarding
       const { data } = await supabase.auth.getSession();
       if (data.session) navigate({ to: "/onboarding" });
@@ -96,7 +96,7 @@ function AuthPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success("Reset email sent.");
+      toast.success("Reset email sent. Check your Inbox or Spam folder.");
       setMode("signin");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Could not send reset email");
