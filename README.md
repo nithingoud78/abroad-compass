@@ -203,8 +203,8 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 ## 👤 Author
 
 Developed and maintained by **[Your Name/Organization]**.
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
+- GitHub: [@nithingoud78](https://github.com/nithingoud78)
+- LinkedIn: [nithin-goud78](https://linkedin.com/in/nithin-goud78)
 
 ---
 
