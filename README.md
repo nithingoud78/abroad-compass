@@ -462,7 +462,7 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more infor
 **Built and maintained by K Nithin Kumar Goud**
 
 [![GitHub](https://img.shields.io/badge/GitHub-@nithingoud78-black?style=flat-square&logo=github)](https://github.com/nithingoud78)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-nithin-goud78-black?style=flat-square&logo=linkedin)](https://linkedin.com/in/nithin-goud78)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-nithin%20-goud78-black?style=flat-square&logo=linkedin)](https://linkedin.com/in/nithin-goud78)
 [![Portfolio](https://img.shields.io/badge/Portfolio-yourwebsite.com-black?style=flat-square&logo=vercel)](https://yourwebsite.com)
 [![Email](https://img.shields.io/badge/k.nithingoud78@gmail.com-black?style=flat-square&logo=gmail)](mailto:k.nithingoud78@gmail.com)
 
