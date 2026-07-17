@@ -87,7 +87,12 @@ function OnboardingWizard() {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!username || username === originalUsername) {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setUsernameError("Username is required.");
+      return;
+    }
+    if (trimmed === originalUsername) {
       setUsernameError("");
       return;
     }
@@ -126,13 +131,21 @@ function OnboardingWizard() {
 
   async function finish() {
     if (!user) return;
+    
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      setUsernameError("Username is required.");
+      setStep(0);
+      return;
+    }
+
     setSaving(true);
     try {
       // Profile
       await supabase.from("profiles").upsert({
         user_id: user.id,
         display_name: displayName,
-        username: username || null,
+        username: trimmedUsername,
         target_country: targetCountry,
         target_intake: targetIntake,
         target_degree: targetDegree,

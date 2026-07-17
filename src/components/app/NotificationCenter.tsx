@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Check, Archive, Trash2, Inbox } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useNotifications } from "@/hooks/use-notifications";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,70 +31,18 @@ type N = {
 };
 
 export function NotificationCenter() {
-  const { user } = useAuth();
+  const { notifications: items, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<N[]>([]);
   const [tab, setTab] = useState<"unread" | "all" | "archived">("unread");
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    async function load() {
-      const { data } = await supabase
-        .from("notifications")
-        .select(`
-          id, type, is_read, created_at,
-          sender_profile:profiles!notifications_sender_id_fkey(username, display_name, avatar_url)
-        `)
-        .eq("receiver_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (!cancelled) setItems((data ?? []) as N[]);
-    }
-    load();
-    const ch = supabase
-      .channel(`notif-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `receiver_id=eq.${user.id}` },
-        load,
-      )
-      .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(ch);
-    };
-  }, [user]);
-
-  const unreadCount = items.filter((i) => !i.is_read).length;
 
   const view = items.filter((i) => {
     if (tab === "unread") return !i.is_read;
     return true; // We don't have archived_at anymore, so all and archived are the same.
   });
 
-  async function markRead(id: string) {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-  }
-  async function markAllRead() {
-    if (!user) return;
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("receiver_id", user.id)
-      .eq("is_read", false);
-  }
-  async function archive(id: string) {
-    // archiving is no longer supported, we just delete
-    remove(id);
-  }
-  async function remove(id: string) {
-    await supabase.from("notifications").delete().eq("id", id);
-  }
-
   function openItem(n: N) {
-    if (!n.is_read) markRead(n.id);
+    if (!n.is_read) markAsRead(n.id);
     let link = "";
     if (n.type === "buddy_request" || n.type === "buddy_accepted") {
       link = n.sender_profile?.username ? `/profile/${n.sender_profile.username}` : "";
@@ -129,7 +78,7 @@ export function NotificationCenter() {
         <div className="flex items-center justify-between border-b px-3 py-2">
           <p className="font-display text-sm font-semibold">Notifications</p>
           {unreadCount > 0 && (
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={markAllRead}>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={markAllAsRead}>
               <Check className="mr-1 h-3 w-3" /> Mark all read
             </Button>
           )}
@@ -167,6 +116,15 @@ export function NotificationCenter() {
                       } else if (n.type === "buddy_accepted") {
                         title = "Request Accepted";
                         body = `${displayName} accepted your buddy request.`;
+                      } else if (n.type === "streak_reminder_18") {
+                        title = "🔥 Daily Check-in Reminder";
+                        body = "You haven't completed today's check-in.";
+                      } else if (n.type === "streak_reminder_21") {
+                        title = "⏰ Friendly Reminder";
+                        body = "Your streak is still waiting.";
+                      } else if (n.type === "streak_reminder_23") {
+                        title = "⚠ Final Reminder";
+                        body = "Complete today's check-in before midnight to keep your streak alive.";
                       }
 
                       return (
@@ -205,17 +163,23 @@ export function NotificationCenter() {
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
-                            aria-label="Archive"
-                            onClick={() => archive(n.id)}
+                            aria-label="Mark as read"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(n.id);
+                            }}
                           >
-                            <Archive className="h-3 w-3" />
+                            <Check className="h-3 w-3" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
                             aria-label="Delete"
-                            onClick={() => remove(n.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(n.id);
+                            }}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

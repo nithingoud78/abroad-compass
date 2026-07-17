@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotifications } from "@/hooks/use-notifications";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Loader2, CheckCircle, Clock, Settings } from "lucide-react";
+import { Bell, Loader2, CheckCircle, Clock, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { StandardPageLayout } from "@/components/app/StandardPageLayout";
@@ -20,99 +20,8 @@ export const Route = createFileRoute("/_authenticated/notifications/")({
   component: NotificationsInbox,
 });
 
-type NotificationRow = {
-  id: string;
-  type: string;
-  sender_id: string;
-  receiver_id: string;
-  profile_id: string;
-  is_read: boolean;
-  created_at: string;
-  sender_profile?: {
-    username: string;
-    display_name: string;
-    avatar_url: string;
-  };
-};
-
 function NotificationsInbox() {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) return;
-    fetchNotifications();
-
-    const channel = supabase
-      .channel("notifications_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        () => {
-          fetchNotifications();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  async function fetchNotifications() {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from("notifications")
-      .select(`
-        *,
-        sender_profile:profiles!notifications_sender_id_fkey(username, display_name, avatar_url)
-      `)
-      .eq("receiver_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (error) {
-      console.error(error);
-      toast.error("Failed to load notifications");
-    } else {
-      setNotifications(data || []);
-    }
-    setLoading(false);
-  }
-
-  async function markAsRead(id: string) {
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", id);
-    if (!error) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-      );
-    }
-  }
-
-  async function markAllAsRead() {
-    if (!user) return;
-    const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
-    if (unreadIds.length === 0) return;
-
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .in("id", unreadIds);
-
-    if (!error) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      toast.success("All notifications marked as read");
-    }
-  }
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
 
   if (loading) {
     return (
@@ -123,8 +32,6 @@ function NotificationsInbox() {
       </StandardPageLayout>
     );
   }
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
     <StandardPageLayout
@@ -176,6 +83,15 @@ function NotificationsInbox() {
                 title = "Request Accepted";
                 body = `${displayName} accepted your buddy request.`;
                 link = n.sender_profile?.username ? `/profile/${n.sender_profile.username}` : "";
+              } else if (n.type === "streak_reminder_18") {
+                title = "🔥 Daily Check-in Reminder";
+                body = "You haven't completed today's check-in.";
+              } else if (n.type === "streak_reminder_21") {
+                title = "⏰ Friendly Reminder";
+                body = "Your streak is still waiting.";
+              } else if (n.type === "streak_reminder_23") {
+                title = "⚠ Final Reminder";
+                body = "Complete today's check-in before midnight to keep your streak alive.";
               } else {
                 title = "Notification";
                 body = "You have a new notification.";
@@ -228,16 +144,26 @@ function NotificationsInbox() {
                   )}
                 </div>
 
-                {!n.is_read && (
+                <div className="flex flex-col gap-2 shrink-0 ml-4">
+                  {!n.is_read && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-brand hover:text-brand hover:bg-brand/10"
+                      onClick={() => markAsRead(n.id)}
+                    >
+                      Mark read
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="shrink-0 h-8 text-xs text-brand hover:text-brand hover:bg-brand/10"
-                    onClick={() => markAsRead(n.id)}
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 self-end"
+                    onClick={() => deleteNotification(n.id)}
                   >
-                    Mark read
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
+                </div>
               </div>
             )})}
           </div>

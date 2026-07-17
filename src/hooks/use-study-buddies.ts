@@ -12,6 +12,9 @@ export type StudyBuddy = {
   status: "pending" | "accepted";
   avatar_url?: string;
   isInitiator?: boolean;
+  instagram_username?: string | null;
+  github_username?: string | null;
+  linkedin_username?: string | null;
 };
 
 export function useStudyBuddies() {
@@ -36,8 +39,8 @@ export function useStudyBuddies() {
         user_id_2,
         status,
         initiator_id,
-        profile_1:profiles!study_buddies_user_id_1_fkey(username, display_name, avatar_url),
-        profile_2:profiles!study_buddies_user_id_2_fkey(username, display_name, avatar_url)
+        profile_1:profiles!study_buddies_user_id_1_fkey(username, display_name, avatar_url, instagram_username, github_username, linkedin_username),
+        profile_2:profiles!study_buddies_user_id_2_fkey(username, display_name, avatar_url, instagram_username, github_username, linkedin_username)
       `,
       )
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`);
@@ -62,6 +65,9 @@ export function useStudyBuddies() {
           status: d.status,
           avatar_url: otherProfile?.avatar_url,
           isInitiator: d.initiator_id ? d.initiator_id === user.id : d.user_id_1 === user.id,
+          instagram_username: otherProfile?.instagram_username,
+          github_username: otherProfile?.github_username,
+          linkedin_username: otherProfile?.linkedin_username,
         };
       });
       setBuddies(mapped);

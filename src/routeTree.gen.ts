@@ -25,6 +25,7 @@ import { Route as AuthenticatedVocabularyRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUniversityRouteImport } from './routes/_authenticated/university'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedSetUsernameRouteImport } from './routes/_authenticated/set-username'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedIeltsRouteImport } from './routes/_authenticated/ielts'
@@ -143,6 +144,12 @@ const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSetUsernameRoute =
+  AuthenticatedSetUsernameRouteImport.update({
+    id: '/set-username',
+    path: '/set-username',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/ielts': typeof AuthenticatedIeltsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/set-username': typeof AuthenticatedSetUsernameRoute
   '/support': typeof AuthenticatedSupportRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/university': typeof AuthenticatedUniversityRoute
@@ -431,6 +439,7 @@ export interface FileRoutesByTo {
   '/ielts': typeof AuthenticatedIeltsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/set-username': typeof AuthenticatedSetUsernameRoute
   '/support': typeof AuthenticatedSupportRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/university': typeof AuthenticatedUniversityRoute
@@ -488,6 +497,7 @@ export interface FileRoutesById {
   '/_authenticated/ielts': typeof AuthenticatedIeltsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
+  '/_authenticated/set-username': typeof AuthenticatedSetUsernameRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/university': typeof AuthenticatedUniversityRoute
@@ -545,6 +555,7 @@ export interface FileRouteTypes {
     | '/ielts'
     | '/onboarding'
     | '/portfolio'
+    | '/set-username'
     | '/support'
     | '/tools'
     | '/university'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/ielts'
     | '/onboarding'
     | '/portfolio'
+    | '/set-username'
     | '/support'
     | '/tools'
     | '/university'
@@ -655,6 +667,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ielts'
     | '/_authenticated/onboarding'
     | '/_authenticated/portfolio'
+    | '/_authenticated/set-username'
     | '/_authenticated/support'
     | '/_authenticated/tools'
     | '/_authenticated/university'
@@ -811,6 +824,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/set-username': {
+      id: '/_authenticated/set-username'
+      path: '/set-username'
+      fullPath: '/set-username'
+      preLoaderRoute: typeof AuthenticatedSetUsernameRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/portfolio': {
@@ -1141,6 +1161,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIeltsRoute: typeof AuthenticatedIeltsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
+  AuthenticatedSetUsernameRoute: typeof AuthenticatedSetUsernameRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedUniversityRoute: typeof AuthenticatedUniversityRoute
@@ -1170,6 +1191,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIeltsRoute: AuthenticatedIeltsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
+  AuthenticatedSetUsernameRoute: AuthenticatedSetUsernameRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedUniversityRoute: AuthenticatedUniversityRoute,

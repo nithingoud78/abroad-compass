@@ -34,6 +34,11 @@ function SettingsPage() {
   const [targetDate, setTargetDate] = useState("");
   const [level, setLevel] = useState("A1");
 
+  // Social Profiles
+  const [instagram, setInstagram] = useState("");
+  const [github, setGithub] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+
   // AI Settings
   const [aiProvider, setAiProvider] = useState<string>("default");
   const [aiModel, setAiModel] = useState("");
@@ -63,11 +68,19 @@ function SettingsPage() {
         ) {
           setTheme(data.theme);
         }
+        setInstagram(data.instagram_username ?? "");
+        setGithub(data.github_username ?? "");
+        setLinkedin(data.linkedin_username ?? "");
       });
   }, [user, setTheme]);
 
   useEffect(() => {
-    if (!username || username === originalUsername) {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setUsernameError("Username is required.");
+      return;
+    }
+    if (trimmed === originalUsername) {
       setUsernameError("");
       return;
     }
@@ -110,16 +123,37 @@ function SettingsPage() {
     await supabase.from("profiles").update({ theme: newTheme }).eq("user_id", user.id);
   }
 
+  function extractUsername(urlOrUsername: string) {
+    let cleaned = urlOrUsername.trim();
+    if (!cleaned) return "";
+    cleaned = cleaned.replace(/\/+$/, "");
+    const parts = cleaned.split('/');
+    let username = parts[parts.length - 1];
+    username = username.split('?')[0].split('#')[0];
+    username = username.replace(/\s+/g, "");
+    return username.substring(0, 100);
+  }
+
   async function save() {
     if (!user) return;
+    
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      setUsernameError("Username is required.");
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
       .update({
         display_name: displayName,
-        username: username || null,
+        username: trimmedUsername,
         germany_target_date: targetDate || null,
         current_german_level: level,
+        instagram_username: extractUsername(instagram) || null,
+        github_username: extractUsername(github) || null,
+        linkedin_username: extractUsername(linkedin) || null,
         theme,
         updated_at: new Date().toISOString(),
       })
@@ -217,6 +251,45 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="text-base">Social Profiles (Optional)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            These will be visible on your public profile so other students can connect with you.
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Instagram</Label>
+            <Input 
+              placeholder="example_user" 
+              value={instagram} 
+              onChange={(e) => setInstagram(e.target.value)} 
+              onBlur={() => setInstagram(extractUsername(instagram))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>GitHub</Label>
+            <Input 
+              placeholder="username" 
+              value={github} 
+              onChange={(e) => setGithub(e.target.value)} 
+              onBlur={() => setGithub(extractUsername(github))}
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>LinkedIn</Label>
+            <Input 
+              placeholder="linkedin-id" 
+              value={linkedin} 
+              onChange={(e) => setLinkedin(e.target.value)} 
+              onBlur={() => setLinkedin(extractUsername(linkedin))}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Card className="shadow-card">
         <CardHeader>

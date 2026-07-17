@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/rea
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app/AppShell";
+import { NotificationProvider } from "@/hooks/use-notifications";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -30,18 +31,24 @@ function AuthenticatedLayout() {
   const { isAdmin, isLoading: roleLoading } = useIsAdmin();
   const router = useRouter();
 
+  const { userId } = Route.useRouteContext();
+
   useEffect(() => {
     supabase
       .from("system_settings")
       .select("value")
       .eq("key", "maintenance_mode")
       .maybeSingle()
-      .then(({ data }) => {
-        const isMaint = data?.value === "true";
+      .then(async ({ data: maintData }) => {
+        const isMaint = maintData?.value === "true";
         const isLogin = pathname === "/admin/login";
         const isAdminRoute = pathname.startsWith("/admin");
 
         if (!isMaint) {
+          const { data: profile } = await supabase.from("profiles").select("username").eq("user_id", userId).maybeSingle();
+          if (!profile?.username && pathname !== "/set-username" && !isAdminRoute) {
+            router.navigate({ to: "/set-username" as never });
+          }
           setReady(true);
         } else {
           if (isAdmin) {
@@ -53,7 +60,7 @@ function AuthenticatedLayout() {
           }
         }
       });
-  }, [isAdmin, roleLoading, router]);
+  }, [isAdmin, roleLoading, router, userId]);
 
   if (!ready || roleLoading) return null;
 
@@ -64,8 +71,10 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <NotificationProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </NotificationProvider>
   );
 }

@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1571,6 +1571,9 @@ export type Database = {
           current_german_level: string | null
           display_name: string | null
           germany_target_date: string | null
+          github_username: string | null
+          instagram_username: string | null
+          linkedin_username: string | null
           onboarding_completed: boolean
           target_country: string | null
           target_degree: string | null
@@ -1586,6 +1589,9 @@ export type Database = {
           current_german_level?: string | null
           display_name?: string | null
           germany_target_date?: string | null
+          github_username?: string | null
+          instagram_username?: string | null
+          linkedin_username?: string | null
           onboarding_completed?: boolean
           target_country?: string | null
           target_degree?: string | null
@@ -1601,6 +1607,9 @@ export type Database = {
           current_german_level?: string | null
           display_name?: string | null
           germany_target_date?: string | null
+          github_username?: string | null
+          instagram_username?: string | null
+          linkedin_username?: string | null
           onboarding_completed?: boolean
           target_country?: string | null
           target_degree?: string | null

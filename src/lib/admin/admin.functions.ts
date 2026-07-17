@@ -111,7 +111,7 @@ export const listUsers = createServerFn({ method: "GET" })
     let query = supabaseAdmin
       .from("profiles")
       .select(
-        "user_id, display_name, avatar_url, onboarding_completed, created_at, target_country, target_intake",
+        "user_id, username, display_name, avatar_url, onboarding_completed, created_at, target_country, target_intake",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -121,15 +121,20 @@ export const listUsers = createServerFn({ method: "GET" })
 
     const ids = (profiles ?? []).map((p) => p.user_id);
     const safeIds = ids.length ? ids : ["00000000-0000-0000-0000-000000000000"];
-    const [{ data: roles }, { data: checkins }] = await Promise.all([
+    const [{ data: roles }, { data: checkins }, { data: authData }] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", safeIds),
       supabaseAdmin.from("daily_checkins").select("user_id, checkin_date").in("user_id", safeIds),
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
     ]);
     const rolesByUser = new Map<string, string[]>();
     (roles ?? []).forEach((r) => {
       const list = rolesByUser.get(r.user_id) ?? [];
       list.push(r.role);
       rolesByUser.set(r.user_id, list);
+    });
+    const emailByUser = new Map<string, string>();
+    (authData?.users ?? []).forEach((u) => {
+      if (u.email) emailByUser.set(u.id, u.email);
     });
 
     // Group checkins by user
@@ -183,6 +188,8 @@ export const listUsers = createServerFn({ method: "GET" })
 
     return (profiles ?? []).map((p) => ({
       user_id: p.user_id,
+      username: p.username ?? null,
+      email: emailByUser.get(p.user_id) ?? null,
       display_name: p.display_name ?? null,
       avatar_url: p.avatar_url ?? null,
       onboarding_completed: !!p.onboarding_completed,
@@ -241,7 +248,7 @@ export const adminFeedbackList = createServerFn({ method: "GET" })
     let query = supabaseAdmin
       .from("feedback_items")
       .select(
-        "id, title, description, kind, status, priority, vote_count, created_at, user_id, internal_notes, developer_notes, assignee",
+        "id, title, description, kind, status, priority, vote_count, created_at, user_id, internal_notes, developer_notes, assignee, name, email",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })

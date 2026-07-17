@@ -30,8 +30,47 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!username) {
+      setUsernameError("");
+      return;
+    }
+    if (username.length < 3 || username.length > 30) {
+      setUsernameError("Must be between 3 and 30 characters");
+      return;
+    }
+    if (!/^[a-z0-9._]+$/.test(username)) {
+      setUsernameError("Only lowercase letters, numbers, periods, and underscores allowed");
+      return;
+    }
+
+    const checkAvailability = async () => {
+      setCheckingUsername(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("username", username)
+        .maybeSingle();
+
+      setCheckingUsername(false);
+      if (error) {
+        setUsernameError("Error checking availability");
+      } else if (data) {
+        setUsernameError("Already taken");
+      } else {
+        setUsernameError("");
+      }
+    };
+
+    const timer = setTimeout(checkAvailability, 500);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -52,7 +91,12 @@ function AuthPage() {
         sessionStorage.setItem("ac-ephemeral", "1");
       }
       toast.success("Welcome back!");
-      navigate({ to: "/dashboard" });
+      const { data: profile } = await supabase.from("profiles").select("username").eq("user_id", error ? "" : (await supabase.auth.getUser()).data.user?.id).maybeSingle();
+      if (!profile?.username) {
+        navigate({ to: "/set-username" });
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -70,7 +114,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          data: { display_name: name || email.split("@")[0] },
+          data: { display_name: name || email.split("@")[0], username },
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
@@ -108,13 +152,14 @@ function AuthPage() {
   async function handleGoogle() {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error, data } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: window.location.origin + "/auth",
         },
       });
       if (error) throw error;
+      // Note: For OAuth, the redirect handles navigation, so the layout guard will catch them if username is missing.
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
@@ -231,13 +276,35 @@ function AuthPage() {
               <TabsContent value="signup" className="space-y-4 pt-5">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name-up">Display name</Label>
+                    <Label htmlFor="name-up">Display name (optional)</Label>
                     <Input
                       id="name-up"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Alex"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username-up">Username</Label>
+                    <Input
+                      id="username-up"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
+                      placeholder="e.g. alex_123"
+                      className={usernameError ? "border-destructive focus-visible:ring-destructive" : ""}
+                      required
+                    />
+                    <div className="flex items-center min-h-[20px]">
+                      {checkingUsername ? (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Checking availability...
+                        </p>
+                      ) : usernameError ? (
+                        <p className="text-xs text-destructive">❌ {usernameError}</p>
+                      ) : username ? (
+                        <p className="text-xs text-green-500">✅ Available</p>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email-up">Email</Label>
@@ -263,7 +330,7 @@ function AuthPage() {
                     />
                     <p className="text-xs text-muted-foreground">At least 8 characters.</p>
                   </div>
-                  <Button type="submit" disabled={busy} className="w-full">
+                  <Button type="submit" disabled={busy || !!usernameError || checkingUsername || !username} className="w-full">
                     {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create account
                   </Button>
                 </form>
@@ -304,7 +371,7 @@ function OrDivider() {
 
 function GoogleIcon() {
   return (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+    <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48" aria-hidden>
       <path
         fill="#FFC107"
         d="M43.6 20.5H42V20H24v8h11.3C33.9 32.4 29.4 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.7 6.4 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.3-3.5z"

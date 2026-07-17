@@ -116,20 +116,40 @@ function UsersPage() {
       {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
 
       <div className="grid gap-2">
-        {(data ?? []).map((u) => (
-          <Card key={u.user_id} className="flex flex-wrap items-center gap-3 p-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate font-medium">{u.display_name || "Unnamed user"}</span>
-                {u.roles.map((r) => (
-                  <Badge
-                    key={r}
-                    variant={r === "admin" ? "default" : "secondary"}
-                    className="text-[10px]"
-                  >
-                    {r}
-                  </Badge>
-                ))}
+        {(() => {
+          const users = data ?? [];
+          const currentUserObj = users.find(u => u.user_id === currentUser?.id);
+          const remainingUsers = users.filter(u => u.user_id !== currentUser?.id);
+          const orderedUsers = currentUserObj ? [currentUserObj, ...remainingUsers] : remainingUsers;
+
+          return orderedUsers.map((u) => (
+            <Card key={u.user_id} className="flex flex-wrap items-center gap-3 p-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-baseline gap-3 min-w-0">
+                      {u.username && <span className="truncate font-bold">{u.username}</span>}
+                      {u.display_name && (!u.username || u.display_name.trim().toLowerCase() !== u.username.trim().toLowerCase()) && (
+                        <span className="truncate font-normal">{u.display_name}</span>
+                      )}
+                      {!u.username && !u.display_name && (
+                        <span className="truncate font-bold">Unnamed user</span>
+                      )}
+                    </div>
+                    {/* @ts-ignore - email might not be typed yet */}
+                    {u.email && (
+                      <span className="truncate text-xs text-muted-foreground">{u.email}</span>
+                    )}
+                  </div>
+                  {u.roles.map((r) => (
+                    <Badge
+                      key={r}
+                      variant={r === "admin" ? "default" : "secondary"}
+                      className="text-[10px]"
+                    >
+                      {r}
+                    </Badge>
+                  ))}
                 {!u.onboarding_completed && (
                   <Badge variant="outline" className="text-[10px]">
                     onboarding
@@ -237,7 +257,7 @@ function UsersPage() {
               ) : null}
             </div>
           </Card>
-        ))}
+        ))})()}
         {!isLoading && (data ?? []).length === 0 && (
           <Card className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
             <UserCog className="h-4 w-4" /> No users matched.

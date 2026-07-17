@@ -9,6 +9,9 @@ import {
   Flame,
   Calendar,
   BookOpen,
+  Instagram,
+  Github,
+  Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +35,9 @@ type ProfileData = {
   target_degree?: string;
   target_intake?: string;
   germany_target_date?: string;
+  instagram_username?: string | null;
+  github_username?: string | null;
+  linkedin_username?: string | null;
   targets?: {
     german_level?: string | null;
     uni_intake_season?: string | null;
@@ -272,6 +278,40 @@ function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          {(profile.instagram_username || profile.github_username || profile.linkedin_username) && (
+            <Card className="shadow-card border">
+              <CardHeader>
+                <CardTitle className="text-lg">Connect</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-3">
+                {profile.github_username && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`https://github.com/${profile.github_username}`} target="_blank" rel="noopener noreferrer">
+                      <Github className="h-4 w-4 mr-2" />
+                      GitHub
+                    </a>
+                  </Button>
+                )}
+                {profile.instagram_username && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`https://instagram.com/${profile.instagram_username}`} target="_blank" rel="noopener noreferrer">
+                      <Instagram className="h-4 w-4 mr-2" />
+                      Instagram
+                    </a>
+                  </Button>
+                )}
+                {profile.linkedin_username && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`https://linkedin.com/in/${profile.linkedin_username}`} target="_blank" rel="noopener noreferrer">
+                      <Linkedin className="h-4 w-4 mr-2" />
+                      LinkedIn
+                    </a>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-card border bg-accent/30 border-dashed">
             <CardContent className="pt-6 flex flex-col items-center justify-center text-center space-y-2 pb-8">

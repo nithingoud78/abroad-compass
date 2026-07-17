@@ -13,6 +13,9 @@ import {
   UserPlus,
   HeartHandshake,
   UserCheck,
+  Instagram,
+  Github,
+  Linkedin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +34,9 @@ type Profile = {
   current_german_level: string | null;
   target_country: string | null;
   avatar_url?: string;
+  instagram_username?: string | null;
+  github_username?: string | null;
+  linkedin_username?: string | null;
 };
 
 function Friends() {
@@ -68,7 +74,7 @@ function Friends() {
     setSearching(true);
     let req = supabase
       .from("profiles")
-      .select("user_id, username, display_name, current_german_level, target_country, avatar_url")
+      .select("user_id, username, display_name, current_german_level, target_country, avatar_url, instagram_username, github_username, linkedin_username")
       .ilike("username", `%${query}%`)
       .neq("user_id", user?.id ?? "")
       .limit(20);
@@ -90,6 +96,29 @@ function Friends() {
   const pendingRequests = buddies.filter((b) => b.status === "pending" && !b.isInitiator);
   const sentRequests = buddies.filter((b) => b.status === "pending" && b.isInitiator);
   const activeBuddies = buddies.filter((b) => b.status === "accepted");
+
+  function SocialIcons({ profile }: { profile: { instagram_username?: string | null, github_username?: string | null, linkedin_username?: string | null } }) {
+    if (!profile.instagram_username && !profile.github_username && !profile.linkedin_username) return null;
+    return (
+      <div className="flex gap-2 mt-1.5">
+        {profile.github_username && (
+          <a href={`https://github.com/${profile.github_username}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
+            <Github className="h-4 w-4" />
+          </a>
+        )}
+        {profile.instagram_username && (
+          <a href={`https://instagram.com/${profile.instagram_username}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
+            <Instagram className="h-4 w-4" />
+          </a>
+        )}
+        {profile.linkedin_username && (
+          <a href={`https://linkedin.com/in/${profile.linkedin_username}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
+            <Linkedin className="h-4 w-4" />
+          </a>
+        )}
+      </div>
+    );
+  }
 
   function BuddyActionButtons({ targetUserId, targetUsername }: { targetUserId: string, targetUsername: string }) {
     const buddyRelation = buddies.find((b) => b.user_id === targetUserId);
@@ -191,6 +220,7 @@ function Friends() {
                             <p className="text-xs text-muted-foreground">
                               @{u.username} • {u.current_german_level || "A1"}
                             </p>
+                            <SocialIcons profile={u} />
                           </div>
                         </div>
                         <BuddyActionButtons targetUserId={u.user_id} targetUsername={u.username as string} />
@@ -294,21 +324,30 @@ function Friends() {
                             key={b.id}
                             className="flex items-center justify-between p-3 rounded-xl border bg-card"
                           >
-                            <Link
-                              to="/profile/$username"
-                              params={{ username: b.username }}
-                              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-                            >
-                              <Avatar>
-                                <AvatarFallback>
-                                  {b.display_name.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                            <div className="flex items-center gap-3">
+                              <Link
+                                to="/profile/$username"
+                                params={{ username: b.username }}
+                                className="hover:opacity-80 transition-opacity"
+                              >
+                                <Avatar>
+                                  <AvatarFallback>
+                                    {b.display_name.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </Link>
                               <div>
-                                <p className="font-medium">{b.display_name}</p>
+                                <Link
+                                  to="/profile/$username"
+                                  params={{ username: b.username }}
+                                  className="font-medium hover:underline block"
+                                >
+                                  {b.display_name}
+                                </Link>
                                 <p className="text-xs text-muted-foreground">@{b.username}</p>
+                                <SocialIcons profile={b} />
                               </div>
-                            </Link>
+                            </div>
                             <Button size="sm" variant="ghost" onClick={() => removeBuddy(b.id)}>
                               Remove
                             </Button>
