@@ -35,21 +35,24 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { StandardPageLayout } from "@/components/app/StandardPageLayout";
-
+import { calculateTrackerAnalytics } from "@/lib/analytics";
 export const Route = createFileRoute("/_authenticated/dmat")({
   head: () => ({ meta: [{ title: "dMAT / TestAS Tracker — Abroad Compass" }] }),
   component: DmatPage,
 });
 
-const TOPICS = ["Figure Sequences", "Latin Squares", "Mathematical Equations", "Subject Module"];
-
 type ProgressRow = {
-  id: string;
-  topic?: string | null;
-  subject?: string | null;
-  progress_pct?: number | null;
-  study_min?: number | null;
-  updated_at?: string;
+  checkin_date: string;
+  dmat_figure_sequence_min: number | null;
+  dmat_math_equations_min: number | null;
+  dmat_latin_squares_min: number | null;
+  dmat_subject_module_min: number | null;
+  dmat_formula_count: number | null;
+};
+
+type MockRow = {
+  score: number;
+  taken_at: string;
 };
 
 type RegistrationRow = {
@@ -66,6 +69,7 @@ function DmatPage() {
   } = useGoalsData();
   const [progress, setProgress] = useState<ProgressRow[]>([]);
   const [registration, setRegistration] = useState<RegistrationRow | null>(null);
+  const [mockTests, setMockTests] = useState<MockRow[]>([]);
   const { globalStreak: streak } = useDashboardData();
   const [practiceLoading, setPracticeLoading] = useState(true);
 
@@ -77,19 +81,17 @@ function DmatPage() {
   async function loadPractice() {
     if (!user) return;
     setPracticeLoading(true);
-    const [{ data: p }, { data: r }, { data: checkins }] = await Promise.all([
+    const [{ data: p }, { data: r }, { data: mocks }] = await Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from as any)("dmat_progress").select("*").eq("user_id", user.id),
+      (supabase.from as any)("daily_progress").select("*").eq("user_id", user.id).order("checkin_date", { ascending: false }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("dmat_registration").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase
-        .from("daily_progress")
-        .select("checkin_date")
-        .eq("user_id", user.id)
-        .order("checkin_date", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from as any)("dmat_mock_tests").select("*").eq("user_id", user.id).order("taken_at", { ascending: false }),
     ]);
     setProgress(p ?? []);
     setRegistration(r);
+    setMockTests(mocks ?? []);
     setPracticeLoading(false);
   }
 
@@ -128,32 +130,59 @@ function DmatPage() {
     ? Math.max(0, differenceInDays(new Date(examDate), new Date()))
     : null;
 
-  let totalStudyMin = 0;
-  let totalPct = 0;
-
-  const topicStats = TOPICS.map((t) => {
-    const records = progress.filter(
-      (p) =>
-        p.topic?.toLowerCase() === t.toLowerCase() || p.subject?.toLowerCase() === t.toLowerCase(),
-    );
-    const pct = records.reduce((acc, curr) => Math.max(acc, curr.progress_pct ?? 0), 0);
-    const mins = records.reduce((acc, curr) => acc + (curr.study_min ?? 0), 0);
-
-    totalStudyMin += mins;
-    totalPct += pct;
-
+  const getTopicStats = (name: string, field: keyof ProgressRow) => {
+    const mins = progress.reduce((acc, curr) => acc + (Number(curr[field]) || 0), 0);
+    const targetHours = 20;
+    const pct = Math.min((mins / 60 / targetHours) * 100, 100);
+    
     let status = "Not Started";
-    if (pct >= 100) {
-      status = "Completed";
-    } else if (pct > 0 || mins > 0) {
-      status = "In Progress";
-    }
+    if (pct >= 100) status = "Completed";
+    else if (mins > 0) status = "In Progress";
+    
+    return { name, pct: Math.min(Math.round(pct), 100), status, mins };
+  };
 
-    return { name: t, pct: Math.min(pct, 100), status, mins };
+  const topicStats = [
+    getTopicStats("Figure Sequences", "dmat_figure_sequence_min"),
+    getTopicStats("Mathematical Equations", "dmat_math_equations_min"),
+    getTopicStats("Latin Squares", "dmat_latin_squares_min"),
+    getTopicStats("Subject Module", "dmat_subject_module_min"),
+  ];
+
+  const totalStudyMin = topicStats.reduce((acc, curr) => acc + curr.mins, 0);
+  const totalHours = (totalStudyMin / 60).toFixed(1);
+
+  const sessionCount = progress.filter(
+    (r) => ((Number(r.dmat_figure_sequence_min) || 0) + (Number(r.dmat_math_equations_min) || 0) + (Number(r.dmat_latin_squares_min) || 0) + (Number(r.dmat_subject_module_min) || 0)) > 0
+  ).length;
+
+  const vocabWords = progress.reduce((acc, curr) => acc + (Number(curr.dmat_formula_count) || 0), 0);
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 14);
+  const cutoffStr = format(cutoff, "yyyy-MM-dd");
+  const recentActiveDays = progress.filter(
+    (r) => r.checkin_date >= cutoffStr && ((Number(r.dmat_figure_sequence_min) || 0) + (Number(r.dmat_math_equations_min) || 0) + (Number(r.dmat_latin_squares_min) || 0) + (Number(r.dmat_subject_module_min) || 0)) > 0
+  ).length;
+
+  const targetScore = dmatSettings?.target_score ? Number(dmatSettings.target_score) : null;
+
+  const { prepScore } = calculateTrackerAnalytics({
+    totalStudyHours: totalStudyMin / 60,
+    sessionCount,
+    vocabWords,
+    skillHours: topicStats.map(t => t.mins / 60),
+    recentActiveDays,
+    mockScoresChronological: [...mockTests].reverse().map(m => Number(m.score)),
+    latestSkillScores: [],
+    targetScore,
+    config: {
+      targetHours: 80,
+      targetSessions: 40,
+    }
   });
 
-  const overallPct = Math.round(totalPct / TOPICS.length) || 0;
-  const totalHours = (totalStudyMin / 60).toFixed(1);
+  const overallPct = prepScore;
 
   return (
     <StandardPageLayout title="dMAT / TestAS Tracker" subtitle="Preparation">

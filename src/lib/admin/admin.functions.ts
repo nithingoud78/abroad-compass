@@ -81,20 +81,22 @@ export const adminStats = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(15);
 
+    const rawStats = stats as any;
+
     return {
-      totalUsers: stats?.totalUsers ?? 0,
-      dau: stats?.dau ?? 0,
-      wau: stats?.wau ?? 0,
-      mau: stats?.mau ?? 0,
-      aiRequests: stats?.aiRequests ?? 0,
-      ocrRequests: stats?.ocrRequests ?? 0,
-      germanChecks: stats?.germanChecks ?? 0,
-      ieltsSessions: stats?.ieltsSessions ?? 0,
-      dmatSessions: stats?.dmatSessions ?? 0,
-      uniSearches: stats?.uniSearches ?? 0,
-      feedbackCount: stats?.feedbackCount ?? 0,
-      blogPublished: stats?.blogPublished ?? 0,
-      notificationsSent: stats?.notificationsSent ?? 0,
+      totalUsers: rawStats?.totalUsers ?? 0,
+      dau: rawStats?.dau ?? 0,
+      wau: rawStats?.wau ?? 0,
+      mau: rawStats?.mau ?? 0,
+      aiRequests: rawStats?.aiRequests ?? 0,
+      ocrRequests: rawStats?.ocrRequests ?? 0,
+      germanChecks: rawStats?.germanChecks ?? 0,
+      ieltsSessions: rawStats?.ieltsSessions ?? 0,
+      dmatSessions: rawStats?.dmatSessions ?? 0,
+      uniSearches: rawStats?.uniSearches ?? 0,
+      feedbackCount: rawStats?.feedbackCount ?? 0,
+      blogPublished: rawStats?.blogPublished ?? 0,
+      notificationsSent: rawStats?.notificationsSent ?? 0,
       recentRegistrations: recentRegistrations ?? [],
       recentActivity: recentActivity ?? [],
     };

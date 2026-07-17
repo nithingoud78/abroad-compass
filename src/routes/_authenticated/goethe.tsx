@@ -28,6 +28,7 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { supabase } from "@/integrations/supabase/client";
 import { SectionTitle } from "@/components/app/SectionTitle";
 import { StandardPageLayout } from "@/components/app/StandardPageLayout";
+import { calculateTrackerAnalytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_authenticated/goethe")({
   head: () => ({ meta: [{ title: "Goethe / TELC Tracker — Abroad Compass" }] }),
@@ -73,18 +74,38 @@ function GoethePage() {
     );
   }
 
-  const getSkillStats = (field: string, targetHours = 20) => {
-    const hours = progress.reduce((acc, curr) => acc + (Number(curr[field]) || 0), 0);
+  const getSkillStats = (
+    field: "german_listening_min" | "german_reading_min" | "german_writing_min" | "german_speaking_min" | "german_vocab",
+    targetHours = 20,
+  ) => {
+    const totalMin = progress.reduce((acc, curr) => acc + (Number(curr[field]) || 0), 0);
+    const hours = field === "german_vocab" ? totalMin / 60 : totalMin / 60;
     const prog = Math.min((hours / targetHours) * 100, 100);
     return { hours: hours.toFixed(1), progress: prog, resources: 0 };
   };
 
-  const reading = getSkillStats("goethe_reading_hours", 20);
-  const listening = getSkillStats("goethe_listening_hours", 20);
-  const writing = getSkillStats("goethe_writing_hours", 15);
-  const speaking = getSkillStats("goethe_speaking_hours", 15);
-  const grammar = getSkillStats("goethe_grammar_hours", 10);
-  const vocabulary = getSkillStats("goethe_vocab_hours", 10);
+  const listening = getSkillStats("german_listening_min", 20);
+  const reading = getSkillStats("german_reading_min", 20);
+  const writing = getSkillStats("german_writing_min", 15);
+  const speaking = getSkillStats("german_speaking_min", 15);
+  // Grammar: approximate from speaking + writing (no dedicated column)
+  const grammarMin = progress.reduce(
+    (acc, curr) =>
+      acc + (Number(curr["german_speaking_min"]) || 0) + (Number(curr["german_writing_min"]) || 0),
+    0,
+  );
+  const grammar = {
+    hours: (grammarMin / 60).toFixed(1),
+    progress: Math.min(((grammarMin / 60) / 10) * 100, 100),
+    resources: 0,
+  };
+  // Vocabulary: from german_vocab (word count logged)
+  const vocabWords = progress.reduce((acc, curr) => acc + (Number(curr["german_vocab"]) || 0), 0);
+  const vocabulary = {
+    hours: (vocabWords / 100).toFixed(1), // display as "session equivalent"
+    progress: Math.min((vocabWords / 500) * 100, 100), // 500 words = 100%
+    resources: 0,
+  };
 
   const totalHours = (
     parseFloat(reading.hours) +
@@ -95,15 +116,36 @@ function GoethePage() {
     parseFloat(vocabulary.hours)
   ).toFixed(1);
   const targetLevel = goals?.target_level ?? null;
-  const overallReadiness = Math.round(
-    (reading.progress +
-      listening.progress +
-      writing.progress +
-      speaking.progress +
-      grammar.progress +
-      vocabulary.progress) /
-      6,
-  );
+
+  const totalStudyHours = progress.reduce((acc, curr) => acc + ((Number(curr["german_listening_min"]) || 0) + (Number(curr["german_reading_min"]) || 0) + (Number(curr["german_writing_min"]) || 0) + (Number(curr["german_speaking_min"]) || 0)) / 60, 0);
+
+  const sessionCount = progress.filter(
+    (r) => ((Number(r.german_listening_min) || 0) + (Number(r.german_reading_min) || 0) + (Number(r.german_writing_min) || 0) + (Number(r.german_speaking_min) || 0)) > 0
+  ).length;
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 14);
+  const cutoffStr = format(cutoff, "yyyy-MM-dd");
+  const recentActiveDays = progress.filter(
+    (r) => r.checkin_date >= cutoffStr && ((Number(r.german_listening_min) || 0) + (Number(r.german_reading_min) || 0) + (Number(r.german_writing_min) || 0) + (Number(r.german_speaking_min) || 0)) > 0
+  ).length;
+
+  const { prepScore } = calculateTrackerAnalytics({
+    totalStudyHours,
+    sessionCount,
+    vocabWords,
+    skillHours: [parseFloat(listening.hours), parseFloat(reading.hours), parseFloat(writing.hours), parseFloat(speaking.hours)],
+    recentActiveDays,
+    mockScoresChronological: [],
+    latestSkillScores: [],
+    targetScore: null,
+    config: {
+      targetHours: 100, // Goethe typical per level
+      targetSessions: 40,
+    }
+  });
+
+  const overallReadiness = prepScore;
 
   const examDate = goals?.exam_date ? new Date(goals.exam_date) : null;
   const now = new Date();

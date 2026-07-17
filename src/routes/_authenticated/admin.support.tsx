@@ -39,6 +39,8 @@ function AdminSupport() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,30 +94,48 @@ function AdminSupport() {
     // Validate 1:1 aspect ratio
     const img = new Image();
     img.src = URL.createObjectURL(file);
-    img.onload = async () => {
+    img.onload = () => {
       const isSquare = img.width === img.height;
       if (!isSquare) {
         toast.error("QR Code image must have a 1:1 aspect ratio (square).");
         return;
       }
 
-      setUploading(true);
-      const { error: uploadError } = await supabase.storage
-        .from("public-assets")
-        .upload("support-qr.png", file, { upsert: true, cacheControl: "3600" });
-
-      if (uploadError) {
-        toast.error(uploadError.message);
-      } else {
-        toast.success("QR Code uploaded successfully");
-        loadSupportData();
-      }
-      setUploading(false);
+      setPendingFile(file);
+      setPendingPreviewUrl(img.src);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     };
+  }
+
+  async function handleSaveUpload() {
+    if (!pendingFile) return;
+    
+    setUploading(true);
+    const { error: uploadError } = await supabase.storage
+      .from("public-assets")
+      .upload("support-qr.png", pendingFile, { upsert: true, cacheControl: "3600" });
+
+    if (uploadError) {
+      toast.error(uploadError.message);
+      setUploading(false);
+    } else {
+      toast.success("QR Code uploaded successfully");
+      // Cache bust the image URL
+      const { data } = supabase.storage.from("public-assets").getPublicUrl("support-qr.png");
+      setQrUrl(`${data.publicUrl}?t=${Date.now()}`);
+      
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+      setUploading(false);
+    }
+  }
+
+  function handleCancelUpload() {
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
   }
 
   async function handleDelete() {
@@ -220,6 +240,12 @@ function AdminSupport() {
             <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl bg-accent/20">
               {loading ? (
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              ) : pendingPreviewUrl ? (
+                <img
+                  src={pendingPreviewUrl}
+                  alt="Pending Support QR"
+                  className="w-48 h-48 object-contain rounded-lg shadow-sm bg-white p-2 border-2 border-brand"
+                />
               ) : qrUrl ? (
                 <img
                   src={qrUrl}
@@ -247,28 +273,52 @@ function AdminSupport() {
                 ref={fileInputRef}
                 onChange={handleFileUpload}
               />
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex-1"
-              >
-                {uploading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4 mr-2" />
-                )}
-                Upload New Image
-              </Button>
+              
+              {pendingFile ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelUpload}
+                    disabled={uploading}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveUpload}
+                    disabled={uploading}
+                    className="flex-1"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex-1"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload New Image
+                  </Button>
 
-              {qrUrl && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={handleDelete}
-                  disabled={uploading}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                  {qrUrl && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={handleDelete}
+                      disabled={uploading}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </CardContent>

@@ -77,7 +77,12 @@ function HmsInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={(e) => onChange(normaliseHms(e.target.value))}
-        className="font-mono"
+        style={{
+          fontFamily: "'Inter', 'Geist Mono', ui-monospace, monospace",
+          fontVariantNumeric: "tabular-nums",
+          fontFeatureSettings: '"tnum"',
+          letterSpacing: "0.04em",
+        }}
       />
     </div>
   );
@@ -163,7 +168,12 @@ function LinksSection({
                 value={l.duration}
                 onChange={(e) => update(i, { duration: e.target.value })}
                 onBlur={(e) => update(i, { duration: normaliseHms(e.target.value) })}
-                className="font-mono"
+                style={{
+                  fontFamily: "'Inter', 'Geist Mono', ui-monospace, monospace",
+                  fontVariantNumeric: "tabular-nums",
+                  fontFeatureSettings: '"tnum"',
+                  letterSpacing: "0.04em",
+                }}
               />
             </div>
           </div>
