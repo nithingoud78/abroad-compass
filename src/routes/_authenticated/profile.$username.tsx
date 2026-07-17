@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useStudyBuddies } from "@/hooks/use-study-buddies";
 
 export const Route = createFileRoute("/_authenticated/profile/$username")({
   component: ProfilePage,
@@ -31,6 +32,13 @@ type ProfileData = {
   target_degree?: string;
   target_intake?: string;
   germany_target_date?: string;
+  targets?: {
+    german_level?: string | null;
+    uni_intake_season?: string | null;
+    uni_intake_year?: string | null;
+    uni_dream?: string | null;
+    german_date?: string | null;
+  };
 };
 
 type BuddyCount = {
@@ -45,7 +53,7 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [isFollowing, setIsFollowing] = useState(false);
+  const { buddies, sendRequest, acceptRequest } = useStudyBuddies();
   const [counts, setCounts] = useState<BuddyCount>({ buddies: 0 });
 
   useEffect(() => {
@@ -63,13 +71,31 @@ function ProfilePage() {
       .eq("username", username)
       .maybeSingle();
 
-    if (pError || !pData) {
+    if (!pData) {
       setError("User not found or does not exist.");
       setLoading(false);
       return;
     }
 
-    setProfile(pData as ProfileData);
+    // Fetch targets independently
+    const { data: tData } = await supabase
+      .from("targets")
+      .select(`
+        german_level,
+        uni_intake_season,
+        uni_intake_year,
+        uni_dream,
+        german_date
+      `)
+      .eq("user_id", pData.user_id)
+      .maybeSingle();
+
+    const mergedProfile: ProfileData = {
+      ...pData,
+      targets: tData || undefined
+    };
+
+    setProfile(mergedProfile);
 
     // Fetch buddy counts using study_buddies
     const { count: buddiesCount } = await supabase
@@ -82,50 +108,7 @@ function ProfilePage() {
       buddies: buddiesCount || 0,
     });
 
-    // Check if I have a buddy connection with this user
-    if (user && user.id !== pData.user_id) {
-      const { data: fData } = await supabase
-        .from("study_buddies")
-        .select("id")
-        .or(
-          `and(user_id_1.eq.${user.id},user_id_2.eq.${pData.user_id}),and(user_id_1.eq.${pData.user_id},user_id_2.eq.${user.id})`,
-        )
-        .eq("status", "accepted")
-        .maybeSingle();
-
-      setIsFollowing(!!fData);
-    }
-
     setLoading(false);
-  }
-
-  async function toggleFollow() {
-    if (!user || !profile) return;
-
-    if (isFollowing) {
-      const { error } = await supabase
-        .from("study_buddies")
-        .delete()
-        .or(
-          `and(user_id_1.eq.${user.id},user_id_2.eq.${profile.user_id}),and(user_id_1.eq.${profile.user_id},user_id_2.eq.${user.id})`,
-        );
-
-      if (!error) {
-        setIsFollowing(false);
-        setCounts((c) => ({ ...c, buddies: Math.max(0, c.buddies - 1) }));
-        toast.success(`Disconnected from @${profile.username}`);
-      }
-    } else {
-      const { error } = await supabase
-        .from("study_buddies")
-        .insert({ user_id_1: user.id, user_id_2: profile.user_id, status: "accepted" });
-
-      if (!error) {
-        setIsFollowing(true);
-        setCounts((c) => ({ ...c, buddies: c.buddies + 1 }));
-        toast.success(`Connected with @${profile.username}`);
-      }
-    }
   }
 
   if (loading) {
@@ -148,6 +131,25 @@ function ProfilePage() {
   }
 
   const isMe = user?.id === profile.user_id;
+
+  const targetRec = profile.targets;
+  let displayIntake = "Not specified";
+  
+  if (targetRec?.uni_intake_season && targetRec?.uni_intake_year) {
+    const season = targetRec.uni_intake_season === "Summer" ? "SS" : "WS";
+    displayIntake = `${season}-${targetRec.uni_intake_year}`;
+  } else if (profile.germany_target_date) {
+    const d = new Date(profile.germany_target_date);
+    if (!isNaN(d.getTime())) {
+      const m = d.getMonth() + 1; // 1-12
+      const y = d.getFullYear();
+      if (m >= 4 && m <= 9) {
+        displayIntake = `SS-${y}`;
+      } else {
+        displayIntake = `WS-${y}`;
+      }
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12">
@@ -185,13 +187,39 @@ function ProfilePage() {
               </div>
             </div>
 
-            {!isMe && (
-              <Button
-                className="w-full"
-                variant={isFollowing ? "outline" : "default"}
-                onClick={toggleFollow}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
+            {!isMe ? (
+              (() => {
+                const relation = buddies.find((b) => b.user_id === profile.user_id);
+                if (!relation) {
+                  return (
+                    <Button className="w-full" onClick={() => sendRequest(profile.user_id)}>
+                      Add Buddy
+                    </Button>
+                  );
+                }
+                if (relation.status === "accepted") {
+                  return (
+                    <Button className="w-full" variant="outline" disabled>
+                      Buddies ✓
+                    </Button>
+                  );
+                }
+                if (relation.isInitiator) {
+                  return (
+                    <Button className="w-full" variant="outline" disabled>
+                      Request Sent
+                    </Button>
+                  );
+                }
+                return (
+                  <Button className="w-full" onClick={() => acceptRequest(relation.id)}>
+                    Accept Buddy Request
+                  </Button>
+                );
+              })()
+            ) : (
+              <Button className="w-full" variant="outline" asChild>
+                <Link to="/settings">Edit Profile</Link>
               </Button>
             )}
           </CardContent>
@@ -219,7 +247,7 @@ function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">German Level</p>
-                  <p className="font-medium">{profile.current_german_level || "A1"}</p>
+                  <p className="font-medium">{targetRec?.german_level || profile.current_german_level || "A1"}</p>
                 </div>
               </div>
 
@@ -239,7 +267,7 @@ function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Target Intake</p>
-                  <p className="font-medium">{profile.target_intake || "Not specified"}</p>
+                  <p className="font-medium">{displayIntake}</p>
                 </div>
               </div>
             </CardContent>

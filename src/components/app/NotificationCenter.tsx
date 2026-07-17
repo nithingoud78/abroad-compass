@@ -19,14 +19,14 @@ import {
 
 type N = {
   id: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  type: NotificationType;
-  priority: NotificationPriority;
-  read_at: string | null;
-  archived_at: string | null;
+  type: string;
+  is_read: boolean;
   created_at: string;
+  sender_profile?: {
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  };
 };
 
 export function NotificationCenter() {
@@ -42,8 +42,11 @@ export function NotificationCenter() {
     async function load() {
       const { data } = await supabase
         .from("notifications")
-        .select("id,title,body,link,type,priority,read_at,archived_at,created_at")
-        .eq("user_id", user!.id)
+        .select(`
+          id, type, is_read, created_at,
+          sender_profile:profiles!notifications_sender_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq("receiver_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
       if (!cancelled) setItems((data ?? []) as N[]);
@@ -53,7 +56,7 @@ export function NotificationCenter() {
       .channel(`notif-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        { event: "*", schema: "public", table: "notifications", filter: `receiver_id=eq.${user.id}` },
         load,
       )
       .subscribe();
@@ -63,40 +66,41 @@ export function NotificationCenter() {
     };
   }, [user]);
 
-  const unreadCount = items.filter((i) => !i.read_at && !i.archived_at).length;
+  const unreadCount = items.filter((i) => !i.is_read).length;
 
   const view = items.filter((i) => {
-    if (tab === "unread") return !i.read_at && !i.archived_at;
-    if (tab === "archived") return !!i.archived_at;
-    return !i.archived_at;
+    if (tab === "unread") return !i.is_read;
+    return true; // We don't have archived_at anymore, so all and archived are the same.
   });
 
   async function markRead(id: string) {
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
   }
   async function markAllRead() {
     if (!user) return;
     await supabase
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .is("read_at", null);
+      .update({ is_read: true })
+      .eq("receiver_id", user.id)
+      .eq("is_read", false);
   }
   async function archive(id: string) {
-    await supabase
-      .from("notifications")
-      .update({ archived_at: new Date().toISOString() })
-      .eq("id", id);
+    // archiving is no longer supported, we just delete
+    remove(id);
   }
   async function remove(id: string) {
     await supabase.from("notifications").delete().eq("id", id);
   }
 
   function openItem(n: N) {
-    if (!n.read_at) markRead(n.id);
-    if (n.link) {
+    if (!n.is_read) markRead(n.id);
+    let link = "";
+    if (n.type === "buddy_request" || n.type === "buddy_accepted") {
+      link = n.sender_profile?.username ? `/profile/${n.sender_profile.username}` : "";
+    }
+    if (link) {
       setOpen(false);
-      navigate({ to: n.link as never });
+      navigate({ to: link as never });
     }
   }
 
@@ -152,7 +156,20 @@ export function NotificationCenter() {
               ) : (
                 <ul className="divide-y">
                   <AnimatePresence initial={false}>
-                    {view.map((n) => (
+                    {view.map((n) => {
+                      const displayName = n.sender_profile?.display_name || "Someone";
+                      let title = "Notification";
+                      let body = "";
+                      
+                      if (n.type === "buddy_request") {
+                        title = "New Buddy Request";
+                        body = `${displayName} sent you a buddy request.`;
+                      } else if (n.type === "buddy_accepted") {
+                        title = "Request Accepted";
+                        body = `${displayName} accepted your buddy request.`;
+                      }
+
+                      return (
                       <motion.li
                         key={n.id}
                         initial={{ opacity: 0, y: -4 }}
@@ -164,11 +181,11 @@ export function NotificationCenter() {
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="outline"
-                              className={`border px-1.5 py-0 text-[10px] ${PRIORITY_TONE[n.priority]}`}
+                              className={`border px-1.5 py-0 text-[10px] bg-brand/10 text-brand`}
                             >
-                              {NOTIFICATION_LABEL[n.type]}
+                              {n.type === "buddy_request" ? "Request" : "Accepted"}
                             </Badge>
-                            {!n.read_at && (
+                            {!n.is_read && (
                               <span
                                 className="h-1.5 w-1.5 rounded-full bg-brand"
                                 aria-label="unread"
@@ -178,23 +195,21 @@ export function NotificationCenter() {
                               {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                             </span>
                           </div>
-                          <p className="mt-1 text-sm font-medium leading-snug">{n.title}</p>
-                          {n.body && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>
+                          <p className="mt-1 text-sm font-medium leading-snug">{title}</p>
+                          {body && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">{body}</p>
                           )}
                         </button>
                         <div className="flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          {!n.archived_at && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6"
-                              aria-label="Archive"
-                              onClick={() => archive(n.id)}
-                            >
-                              <Archive className="h-3 w-3" />
-                            </Button>
-                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            aria-label="Archive"
+                            onClick={() => archive(n.id)}
+                          >
+                            <Archive className="h-3 w-3" />
+                          </Button>
                           <Button
                             size="icon"
                             variant="ghost"
@@ -206,7 +221,7 @@ export function NotificationCenter() {
                           </Button>
                         </div>
                       </motion.li>
-                    ))}
+                    )})}
                   </AnimatePresence>
                 </ul>
               )}

@@ -91,7 +91,7 @@ function Friends() {
   const sentRequests = buddies.filter((b) => b.status === "pending" && b.isInitiator);
   const activeBuddies = buddies.filter((b) => b.status === "accepted");
 
-  function BuddyActionButtons({ targetUserId }: { targetUserId: string }) {
+  function BuddyActionButtons({ targetUserId, targetUsername }: { targetUserId: string, targetUsername: string }) {
     const buddyRelation = buddies.find((b) => b.user_id === targetUserId);
 
     return (
@@ -100,7 +100,7 @@ function Friends() {
           <Link
             to="/profile/$username"
             params={{
-              username: searchResults.find((s) => s.user_id === targetUserId)?.username || "",
+              username: targetUsername || "",
             }}
           >
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -193,7 +193,7 @@ function Friends() {
                             </p>
                           </div>
                         </div>
-                        <BuddyActionButtons targetUserId={u.user_id} />
+                        <BuddyActionButtons targetUserId={u.user_id} targetUsername={u.username as string} />
                       </div>
                     ))}
                   </div>
@@ -237,7 +237,11 @@ function Friends() {
                             key={b.id}
                             className="flex items-center justify-between p-3 rounded-xl border bg-brand/5 border-brand/20"
                           >
-                            <div className="flex items-center gap-3">
+                            <Link 
+                              to="/profile/$username"
+                              params={{ username: b.username }}
+                              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                            >
                               <Avatar>
                                 <AvatarFallback>
                                   {b.display_name.substring(0, 2).toUpperCase()}
@@ -247,7 +251,7 @@ function Friends() {
                                 <p className="font-medium">{b.display_name}</p>
                                 <p className="text-xs text-muted-foreground">@{b.username}</p>
                               </div>
-                            </div>
+                            </Link>
                             <div className="flex gap-2">
                               <Button variant="outline" size="sm" onClick={() => removeBuddy(b.id)}>
                                 Decline
@@ -290,7 +294,11 @@ function Friends() {
                             key={b.id}
                             className="flex items-center justify-between p-3 rounded-xl border bg-card"
                           >
-                            <div className="flex items-center gap-3">
+                            <Link
+                              to="/profile/$username"
+                              params={{ username: b.username }}
+                              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                            >
                               <Avatar>
                                 <AvatarFallback>
                                   {b.display_name.substring(0, 2).toUpperCase()}
@@ -300,7 +308,7 @@ function Friends() {
                                 <p className="font-medium">{b.display_name}</p>
                                 <p className="text-xs text-muted-foreground">@{b.username}</p>
                               </div>
-                            </div>
+                            </Link>
                             <Button size="sm" variant="ghost" onClick={() => removeBuddy(b.id)}>
                               Remove
                             </Button>

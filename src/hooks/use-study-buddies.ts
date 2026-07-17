@@ -35,6 +35,7 @@ export function useStudyBuddies() {
         user_id_1,
         user_id_2,
         status,
+        initiator_id,
         profile_1:profiles!study_buddies_user_id_1_fkey(username, display_name, avatar_url),
         profile_2:profiles!study_buddies_user_id_2_fkey(username, display_name, avatar_url)
       `,
@@ -60,7 +61,7 @@ export function useStudyBuddies() {
           display_name: otherProfile?.display_name || "Unknown",
           status: d.status,
           avatar_url: otherProfile?.avatar_url,
-          isInitiator: d.user_id_1 === user.id,
+          isInitiator: d.initiator_id ? d.initiator_id === user.id : d.user_id_1 === user.id,
         };
       });
       setBuddies(mapped);
@@ -70,9 +71,11 @@ export function useStudyBuddies() {
 
   async function sendRequest(targetUserId: string) {
     if (!user) return false;
+    const isUser1 = user.id < targetUserId;
     const { error } = await supabase.from("study_buddies").insert({
-      user_id_1: user.id,
-      user_id_2: targetUserId,
+      user_id_1: isUser1 ? user.id : targetUserId,
+      user_id_2: isUser1 ? targetUserId : user.id,
+      initiator_id: user.id,
       status: "pending",
     });
 
@@ -81,17 +84,11 @@ export function useStudyBuddies() {
       return false;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("user_id", user.id)
-      .single();
     await supabase.from("notifications").insert({
-      user_id: targetUserId,
+      receiver_id: targetUserId,
+      sender_id: user.id,
+      profile_id: user.id,
       type: "buddy_request",
-      title: "New Study Buddy Request",
-      body: `${profile?.display_name || "Someone"} sent you a Study Buddy request.`,
-      link: "/friends",
     });
 
     toast.success("Buddy request sent!");
@@ -114,17 +111,11 @@ export function useStudyBuddies() {
     // We need to know who sent it to notify them
     const buddy = buddies.find((b) => b.id === id);
     if (buddy) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("user_id", user.id)
-        .single();
       await supabase.from("notifications").insert({
-        user_id: buddy.user_id,
+        receiver_id: buddy.user_id,
+        sender_id: user.id,
+        profile_id: user.id,
         type: "buddy_accepted",
-        title: "Request Accepted",
-        body: `${profile?.display_name || "Someone"} accepted your Study Buddy request.`,
-        link: "/profile/" + user.id,
       });
     }
 
