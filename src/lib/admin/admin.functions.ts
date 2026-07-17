@@ -878,25 +878,29 @@ export const adminListUsersWithRoles = createServerFn({ method: "GET" })
     await ensureSuperAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Fetch all users with profiles
+    // Fetch only admin and super_admin roles
+    const { data: roles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["admin", "super_admin"]);
+
+    if (roleErr) throw new Error(roleErr.message);
+    if (!roles || roles.length === 0) return [];
+
+    const adminIds = roles.map((r) => r.user_id);
+    const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));
+
+    // Fetch profiles only for the administrative users
     const { data: profiles, error: profileErr } = await supabaseAdmin
       .from("profiles")
-      .select("user_id, display_name, created_at, avatar_url");
+      .select("user_id, display_name, created_at, avatar_url")
+      .in("user_id", adminIds);
 
     if (profileErr) throw new Error(profileErr.message);
 
-    // Fetch all roles
-    const { data: roles, error: roleErr } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id, role");
-
-    if (roleErr) throw new Error(roleErr.message);
-
-    const roleMap = new Map(roles?.map((r) => [r.user_id, r.role]));
-
     const usersWithRoles = profiles?.map((p) => ({
       ...p,
-      role: roleMap.get(p.user_id) || "user",
+      role: roleMap.get(p.user_id) as "admin" | "super_admin",
     }));
 
     return usersWithRoles ?? [];

@@ -66,12 +66,19 @@ function Friends() {
 
   async function searchUsers(query: string) {
     setSearching(true);
-    const { data, error } = await supabase
+    let req = supabase
       .from("profiles")
-      .select("user_id, username, display_name, current_german_level, target_country")
+      .select("user_id, username, display_name, current_german_level, target_country, avatar_url")
       .ilike("username", `%${query}%`)
       .neq("user_id", user?.id ?? "")
-      .limit(10);
+      .limit(20);
+
+    const buddyIds = buddies.map((b) => b.user_id);
+    if (buddyIds.length > 0) {
+      req = req.not("user_id", "in", `(${buddyIds.join(",")})`);
+    }
+
+    const { data, error } = await req;
 
     setSearching(false);
     if (!error && data) {

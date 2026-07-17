@@ -49,7 +49,7 @@ const primary = [
   { title: "Budget", url: "/budget", icon: Wallet },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Goals", url: "/goals", icon: Target },
-  { title: "Community", url: "/friends", icon: Users },
+  { title: "Friends", url: "/friends", icon: Users },
   { title: "Support", url: "/support", icon: HeartHandshake },
 ];
 

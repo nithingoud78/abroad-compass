@@ -1,4 +1,4 @@
-create table public.study_buddies (
+create table if not exists public.study_buddies (
     id uuid not null default gen_random_uuid(),
     user_id_1 uuid not null references public.profiles(user_id) on delete cascade,
     user_id_2 uuid not null references public.profiles(user_id) on delete cascade,
@@ -32,8 +32,8 @@ create policy "Users can delete their buddy relationships"
     for delete
     using (auth.uid() = user_id_1 or auth.uid() = user_id_2);
 
-
-create table public.legal_pages (
+/*
+create table if not exists public.legal_pages (
     slug text not null,
     title text not null,
     content_md text not null,
@@ -81,3 +81,4 @@ create policy "Admins can insert public assets"
             and user_roles.role = 'admin'
         )
     );
+*/
